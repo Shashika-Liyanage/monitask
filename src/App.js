@@ -3,6 +3,7 @@ import Home from "./Logins/login";
 import Register from "./Register/Register";
 import Header from "./Header/Header";
 import "./App.css";
+import Dashboard from "./Dashboard/Dashboard";
 //             return;
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route path="/contact" element={<div>Contact</div>} />
         <Route path="/login" element={<div>Login</div>} />
         <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/forgot-password" element={<div>Forgot Password</div>} />
       </Routes>
     </Router>
