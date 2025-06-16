@@ -1,27 +1,34 @@
-# backend/app.py
-
-from flask import Flask, Response
-from flask_cors import CORS
 import cv2
 
-app = Flask(__name__)
-CORS(app)
+# Open webcam
+cam = cv2.VideoCapture(0)
 
-camera = cv2.VideoCapture(0)
+# Define the codec and create VideoWriter object
+fourcc = cv2.VideoWriter_fourcc(*'XVID')  # You can also try 'MJPG', 'MP4V', etc.
+out = cv2.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
 
-def generate_frames():
-    while True:
-        success, frame = camera.read()
-        if not success:
-            break
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+cv2.namedWindow("Python webcam video")
 
-@app.route('/video')
-def video():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+while True:
+    ret, frame = cam.read()
 
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    if not ret:
+        print("Failed to grab frame")
+        break
+
+    # Show frame in window
+    cv2.imshow("Python webcam video", frame)
+
+    # Write frame to video file
+    out.write(frame)
+
+    # Exit with ESC key
+    k = cv2.waitKey(1)
+    if k % 256 == 27:
+        print("Escape hit, closing...")
+        break
+
+# Release everything
+cam.release()
+out.release()
+cv2.destroyAllWindows()
