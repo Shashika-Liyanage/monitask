@@ -17,7 +17,7 @@ while True:
         break
 
     # Show frame in window
-    cv2.imshow("Python webcam video", frame)
+    cv2.imshow("Monitask", frame)
 
     # Write frame to video file
     out.write(frame)
