@@ -1,98 +1,112 @@
 import cv2
-import face_recognition
-import os
+import mediapipe as mp
+import numpy as np
+import time
 
-# Folder with known faces (jpg/png) – filenames should be the person's name
-KNOWN_FACES_DIR = "known_faces"
+# Setup MediaPipe Face Mesh
+mp_face_mesh = mp.solutions.face_mesh
+face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True, max_num_faces=1)
 
-# Create folder if it doesn't exist
-if not os.path.exists(KNOWN_FACES_DIR):
-    os.makedirs(KNOWN_FACES_DIR)
-    print(f"Created missing folder: {KNOWN_FACES_DIR}. Please add known face images here.")
-    # Exit early since no faces yet
-    exit()
+# Eye indexes from MediaPipe
+LEFT_EYE = [33, 133]
 
-known_face_encodings = []
-known_face_names = []
+# Webcam
+cap = cv2.VideoCapture(0)
 
-print("Loading known faces...")
+def detect_pupil_center(gray_eye):
+    _, thresh = cv2.threshold(gray_eye, 30, 255, cv2.THRESH_BINARY_INV)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if contours:
+        largest = max(contours, key=cv2.contourArea)
+        (x, y), radius = cv2.minEnclosingCircle(largest)
+        return int(x), int(y), int(radius)
+    return None, None, None
 
-for filename in os.listdir(KNOWN_FACES_DIR):
-    if filename.lower().endswith(('.jpg', '.png')):
-        image_path = os.path.join(KNOWN_FACES_DIR, filename)
-        try:
-            image = face_recognition.load_image_file(image_path)
-            # Check image type and shape
-            if image.dtype != 'uint8' or image.ndim != 3 or image.shape[2] != 3:
-                print(f"Skipping unsupported image (not 8bit RGB): {filename}")
-                continue
-
-            encodings = face_recognition.face_encodings(image)
-            if len(encodings) == 0:
-                print(f"No faces found in image: {filename}, skipping.")
-                continue
-
-            known_face_encodings.append(encodings[0])
-            name = os.path.splitext(filename)[0]
-            known_face_names.append(name)
-            print(f"Loaded encoding for: {name}")
-
-        except Exception as e:
-            print(f"Error processing {filename}: {e}")
-
-if len(known_face_encodings) == 0:
-    print("No valid face encodings found! Add clear face images to 'known_faces' folder.")
-    exit()
-
-# Start webcam
-video_capture = cv2.VideoCapture(0)
-
-print("Starting webcam face recognition. Press ESC to quit.")
+looking_away = False
+away_start_time = 0
+last_away_duration = 0
 
 while True:
-    ret, frame = video_capture.read()
+    ret, frame = cap.read()
     if not ret:
-        print("Failed to grab frame")
         break
 
-    # Resize frame for faster processing
-    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+    ih, iw = frame.shape[:2]
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    result = face_mesh.process(rgb)
 
-    # Convert to RGB
-    rgb_small_frame = small_frame[:, :, ::-1]
+    message = "Face not detected"
 
-    # Find all face locations and face encodings
-    face_locations = face_recognition.face_locations(rgb_small_frame)
-    face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+    if result.multi_face_landmarks:
+        landmarks = result.multi_face_landmarks[0].landmark
+        x1 = int(landmarks[LEFT_EYE[0]].x * iw)
+        y1 = int(landmarks[LEFT_EYE[0]].y * ih)
+        x2 = int(landmarks[LEFT_EYE[1]].x * iw)
+        y2 = int(landmarks[LEFT_EYE[1]].y * ih)
 
-    for face_encoding, face_location in zip(face_encodings, face_locations):
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-        name = "Unknown"
+        eye_margin = 5
+        x1, y1 = min(x1, x2) - eye_margin, min(y1, y2) - eye_margin
+        x2, y2 = max(x1, x2) + 2 * eye_margin, max(y1, y2) + 2 * eye_margin
 
-        face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-        if len(face_distances) > 0:
-            best_match_index = face_distances.argmin()
-            if matches[best_match_index]:
-                name = known_face_names[best_match_index]
+        eye_roi = frame[y1:y2, x1:x2]
+        if eye_roi.size == 0:
+            continue
 
-        # Scale face location back to original frame size
-        top, right, bottom, left = [v * 4 for v in face_location]
+        gray_eye = cv2.cvtColor(eye_roi, cv2.COLOR_BGR2GRAY)
+        px, py, pr = detect_pupil_center(gray_eye)
 
-        # Draw rectangle around face
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
 
-        # Draw label background and text
-        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
-        cv2.putText(frame, name, (left + 6, bottom - 10),
-                    cv2.FONT_HERSHEY_DUPLEX, 0.7, (0, 0, 0), 1)
+        if px is not None:
+            cv2.circle(eye_roi, (px, py), pr, (0, 0, 255), 1)
 
-    # Display the resulting frame
-    cv2.imshow('Face Recognition', frame)
+            eye_width = x2 - x1
+            ratio = px / eye_width
 
-    # Exit on ESC key
-    if cv2.waitKey(1) & 0xFF == 27:
-        print("ESC pressed. Exiting...")
+            if ratio < 0.3 or ratio > 0.7:
+                message = "⚠️ Looking Away"
+
+                if not looking_away:
+                    away_start_time = time.time()
+                    looking_away = True
+            else:
+                message = "✅ Looking Forward"
+
+                if looking_away:
+                    last_away_duration = time.time() - away_start_time
+                    looking_away = False
+
+                    # Log only if away duration > 1 second
+                    if last_away_duration > 1:
+                        mins = int(last_away_duration // 60)
+                        secs = int(last_away_duration % 60)
+                        duration_str = f"{mins:02}:{secs:02}"
+
+                        with open("look_away_log.txt", "a") as f:
+                            f.write(f"Looked away for {duration_str}\n")
+        else:
+            message = "Pupil not found"
+
+    if looking_away:
+        duration = time.time() - away_start_time
+    else:
+        duration = last_away_duration
+
+    mins = int(duration // 60)
+    secs = int(duration % 60)
+    timer_text = f"⏱ Looked Away: {mins:02}:{secs:02}"
+
+    cv2.putText(frame, message, (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.0,
+                (0, 0, 255) if "⚠️" in message else (0, 255, 0), 2)
+
+    cv2.putText(frame, timer_text, (10, 70),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 0), 2)
+
+    cv2.imshow("Look Away Timer", frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-video_capture.release()
+cap.release()
 cv2.destroyAllWindows()
