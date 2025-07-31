@@ -1,0 +1,19 @@
+/* styles.css */
+.header {
+  display: flex;
+  align-items: center;
+  background-color: #feecb3; /* soft yellow */
+  padding: 10px 20px;
+}
+
+.logo {
+  height: 50px;
+  width: auto;
+  margin-right: 10px;
+}
+
+.title {
+  font-size: 24px;
+  color: #e26a00; /* Orange color like the logo */
+  font-family: 'Segoe UI', sans-serif;
+}
