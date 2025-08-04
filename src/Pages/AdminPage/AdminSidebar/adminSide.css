@@ -1,4 +1,4 @@
-.employee-sidebar {
+.admin-sidebar {
   width: 280px;
   height: 100vh;
   background-color: #C58940;
@@ -11,7 +11,7 @@
   transition: transform 0.3s ease;
 }
 
-.sidebar-logo {
+.admin-sidebar-logo {
   font-size: 24px;
   font-weight: bold;
   color: #fff;
@@ -19,60 +19,55 @@
   margin-bottom: 30px;
 }
 
-.menu-list {
+.admin-menu-list {
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
-.menu-item {
-  background-color: #FAEAB1 !important;
+.admin-menu-item {
+ background-color: #FAEAB1 !important;
   color: #000;
   border: 1px solid #000 !important;
   border-radius: 15px !important;
-  padding: 12px 20px !important;
+  padding: 12px 12px !important;
   text-align: left;
   transition: 0.3s ease;
-
 }
 
-.menu-item:hover {
+.admin-menu-item:hover {
   background-color: #e9d89f !important;
 }
 
-.menu-item.selected {
-  background-color: #B09226 !important;
+.admin-menu-item.selected {
+ background-color: #B09226 !important;
   color: #fff !important;
   border-radius: 8px;
   border: 2px solid #fff !important;
 }
 
-/* Optional: make icons white too */
-.menu-item.selected .MuiListItemIcon-root,
-.menu-item.selected .MuiListItemText-primary {
+.admin-menu-item.selected .MuiListItemIcon-root,
+.admin-menu-item.selected .MuiListItemText-primary {
   color: #fff !important;
 }
-  
 
-.menu-icon {
+.admin-menu-icon {
   color: #fff;
 }
 
-.menu-text {
+.admin-menu-text {
   font-weight: 600;
   font-size: 16px;
-
 }
 
-/* Mobile - Hidden sidebar */
+/* Mobile */
 @media screen and (max-width: 768px) {
-  .employee-sidebar {
+  .admin-sidebar {
     transform: translateX(-100%);
-
   }
 
-  .employee-sidebar.open {
+  .admin-sidebar.open {
     transform: translateX(0);
   }
 }

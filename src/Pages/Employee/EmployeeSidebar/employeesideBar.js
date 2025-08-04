@@ -3,34 +3,50 @@ import './employeesideBar.css';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import Box from '@mui/material/Box';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import SpaceDashboardRoundedIcon from '@mui/icons-material/SpaceDashboardRounded';
+import Person2RoundedIcon from '@mui/icons-material/Person2Rounded';
+import EmojiPeopleRoundedIcon from '@mui/icons-material/EmojiPeopleRounded';
+import NewspaperRoundedIcon from '@mui/icons-material/NewspaperRounded';
+import TaskRoundedIcon from '@mui/icons-material/TaskRounded';
+import { useNavigate } from 'react-router-dom'; // ✅ Import this
 
-function EmployeeSideBar() {
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
+function EmployeeSidebar({ isOpen, onClose, selectedIndex, setSelectedIndex }) {
+  const navigate = useNavigate(); // ✅ Hook for navigation
 
-  const handleListItemClick = (event, index) => {
+  const menuItems = [
+    { label: 'Dashboard', icon: <SpaceDashboardRoundedIcon />, path: '/employeeDash' },
+    { label: 'Profile', icon: <Person2RoundedIcon />, path: '/employeeProfile' },
+    { label: 'Attendance', icon: <EmojiPeopleRoundedIcon />, path: '/employeeAttendance' },
+    { label: 'Performance', icon: <NewspaperRoundedIcon />, path: '/employeePerformance' },
+    { label: 'Task', icon: <TaskRoundedIcon />, path: '/employeeTask' },
+  ];
+
+  const handleClick = (index) => {
     setSelectedIndex(index);
+    navigate(menuItems[index].path); // ✅ Navigate to the selected route
+    onClose(); // Close sidebar on mobile
   };
 
-  const menuItems = ['Dashboard', 'Profile', 'Attendance', 'Performance', 'Task'];
-
   return (
-    <Box className="sidebar">
-      <div className="sidebar-logo">LOGO</div>
+    <div className={`employee-sidebar ${isOpen ? 'open' : ''}`}>
+      <div className="sidebar-logo">Monitask</div>
+
       <List component="nav" className="menu-list">
-        {menuItems.map((text, index) => (
+        {menuItems.map((item, index) => (
           <ListItemButton
-            key={text}
+            key={index}
             selected={selectedIndex === index}
-            onClick={(event) => handleListItemClick(event, index)}
+            onClick={() => handleClick(index)}
             className={`menu-item ${selectedIndex === index ? 'selected' : ''}`}
           >
-            <ListItemText primary={text} primaryTypographyProps={{ className: 'menu-text' }} />
+            <ListItemIcon className="menu-icon">{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} className="menu-text" />
           </ListItemButton>
         ))}
       </List>
-    </Box>
+    </div>
   );
 }
 
-export default EmployeeSideBar;
+export default EmployeeSidebar;
