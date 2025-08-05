@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import AdminLayout from '../../../Layout/Admin_Layout/AdminL';
 import Person3RoundedIcon from '@mui/icons-material/Person3Rounded';
 import './adminAttendance.css';
+import { useNavigate } from 'react-router-dom';
+
 
 function AdminAttendanceReq() {
   const mockData = [
@@ -11,6 +13,7 @@ function AdminAttendanceReq() {
     { id: 'A004', empId: 'E126', date: '2025-08-05', checkIn: '08:00', checkOut: '16:30', attendance: 'Present', status: 'Checked' },
     { id: 'A005', empId: 'E127', date: '2025-08-05', checkIn: '09:15', checkOut: '18:00', attendance: 'Late', status: 'Pending' },
   ];
+const navigate = useNavigate();
 
   // New states to track filter inputs
   const [filterStatus, setFilterStatus] = useState('');
@@ -102,7 +105,13 @@ function AdminAttendanceReq() {
         </div>
 
         <div className="attendance-req-actions">
-          <button className="attendance-req-btn attendance-req-btn-leave-custom">Leave</button>
+          <button
+  className="attendance-req-btn attendance-req-btn-leave-custom"
+  onClick={() => navigate('/adminLeave')}
+>
+  Leave
+</button>
+
           <button className="attendance-req-btn attendance-req-btn-ok-custom">OK</button>
         </div>
       </div>
