@@ -15,17 +15,17 @@ function AdminSideBar({ isOpen, onClose, selectedIndex, setSelectedIndex }) {
   const navigate = useNavigate();
 
   const menuItems = [
-  { label: 'Dashboard', icon: <SpaceDashboardRoundedIcon /> },
-  { label: 'Profile Manage', icon: <Person2RoundedIcon /> },
-  { label: 'Attendance Manage', icon: <EmojiPeopleRoundedIcon /> },
-  { label: 'Performance Manage', icon: <NewspaperRoundedIcon /> },
-  { label: 'Task Manage', icon: <TaskRoundedIcon /> },
-];
+    { label: 'Dashboard', icon: <SpaceDashboardRoundedIcon />, path: '/adminDash' },
+    { label: 'Profile Manage', icon: <Person2RoundedIcon />, path: '/adminProfileManage' },
+    { label: 'Attendance Manage', icon: <EmojiPeopleRoundedIcon />, path: '/adminAttendance' },
+    { label: 'Performance Manage', icon: <NewspaperRoundedIcon />, path: '/adminPerformance' },
+    { label: 'Task Manage', icon: <TaskRoundedIcon />, path: '/adminTask' },
+  ];
 
   const handleClick = (index) => {
     setSelectedIndex(index);
     navigate(menuItems[index].path);
-    onClose(); // for mobile
+    onClose(); // For closing sidebar on mobile
   };
 
   return (
