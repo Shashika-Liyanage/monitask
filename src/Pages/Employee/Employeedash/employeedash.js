@@ -1,11 +1,14 @@
 import React from 'react'
-import EmployeeSideBar from '../EmployeeSidebar/employeesideBar'
+import EmployeeLayout from '../../../Layout/Employee_Layout/EmployeeL';
+
 
 function EmployeeDashboard() {
   
   return (
 <>
-    <EmployeeSideBar/>
+ <EmployeeLayout>
+
+ </EmployeeLayout>
     
    
 

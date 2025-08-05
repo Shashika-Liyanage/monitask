@@ -1,0 +1,459 @@
+/* Container */
+body, html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.leave-container {
+  padding: 0 30px 30px 30px; /* top padding is now 0 */
+  background-color: #f5f6fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Title */
+.leave-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+/* Main content layout: calendar + summary */
+.leave-main-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+/* Calendar */
+.leave-calendar-modern {
+  flex: 1;
+  min-width: 300px;
+  max-width: 500px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+/* Modern calendar style */
+.react-calendar {
+  width: 100%;
+  border: none;
+  font-family: "Segoe UI", sans-serif;
+  font-size: 16px;
+}
+
+.react-calendar__tile--active {
+  background: #c58940 !important;
+  color: #fff;
+  border-radius: 8px;
+}
+
+.react-calendar__tile--now {
+  background: #ffe0b2;
+  border-radius: 8px;
+}
+
+/* Summary column */
+.leave-summary-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 250px;
+}
+
+/* Individual leave cards */
+.leave-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.leave-card:hover {
+  transform: translateY(-5px);
+}
+
+.leave-card p {
+  margin: 0;
+  font-size: 16px;
+  color: #666;
+}
+
+.leave-card h3 {
+  margin-top: 10px;
+  font-size: 24px;
+  color: #222;
+}
+
+/* Status colors */
+.leave-card.approved {
+  border-left: 6px solid #4caf50;
+}
+.leave-card.pending {
+  border-left: 6px solid #ffc107;
+}
+.leave-card.rejected {
+  border-left: 6px solid #f44336;
+}
+
+/* Table Section */
+.leave-table-container {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.leave-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leave-table th,
+.leave-table td {
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  text-align: left;
+  white-space: nowrap;  /* prevents wrapping */
+}
+
+.leave-table th {
+  background-color: #f4f4f4;
+  font-weight: 600;
+  color: #555;
+}
+
+.leave-table td {
+  border-top: 1px solid #eee;
+}
+
+.status-approved {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.status-pending {
+  color: #ffc107;
+  font-weight: bold;
+}
+
+.status-rejected {
+  color: #f44336;
+  font-weight: bold;
+}
+
+/* Buttons */
+/* Container for buttons (optional styling) */
+.leave-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  justify-content: flex-end; /* Aligns buttons to the right */
+}
+
+/* Primary button: Submit Request */
+.submit-leave-btn {
+  background-color: #FAEAB1;
+  color: rgb(6, 1, 1);
+  border: 2px solid #000;
+  padding: 12px 20px;
+  font-size: 15px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-leave-btn:hover {
+  background-color: #C58940;
+}
+
+/* Secondary button: View History */
+.view-history-btn {
+  background-color: #FAEAB1;
+  color: #333;
+  border: 2px solid #000;
+  padding: 12px 20px;
+  font-size: 15px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.view-history-btn:hover {
+  background-color: #C58940;
+}
+/* Overlay */
+
+/* Wrapper that covers the entire screen */
+.modal-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+/* Dark semi-transparent background */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000; /* Behind the modal */
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Modal base style */
+.leave-modal,
+.leave-modal.history-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1001; /* Above overlay */
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 30px;
+  width: 500px;
+  max-width: 90%;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Optional: differentiate history modal if needed */
+.leave-modal.history-modal {
+  background-color: #f9f9f9;
+}
+
+/* Close button styling */
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #888;
+}
+
+.modal-close:hover {
+  color: #000;
+}
+
+/* Modal content area */
+.modal-content {
+  margin-top: 20px;
+}
+
+/* Buttons inside modal */
+.modal-button {
+  background-color: #FAEAB1;
+  color: #000;
+  padding: 10px 18px;
+  font-size: 16px;
+  border: 2px solid #000;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.modal-button:hover {
+  background-color: #f0d96d;
+}
+
+/* Responsive tweak for small devices */
+@media (max-width: 600px) {
+  .leave-modal,
+  .leave-modal.history-modal {
+    width: 90%;
+    padding: 20px;
+  }
+
+  .modal-close {
+    top: 10px;
+    right: 15px;
+  }
+}
+
+
+.leave-form input,
+.leave-form select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  box-sizing: border-box;
+  background: white;
+  z-index: 1002;
+}
+
+.leave-form select {
+  width: 100% !important;
+  box-sizing: border-box; /* ensure padding doesn't break width */
+}
+.required {
+  color: red;
+  margin-left: 3px;
+}
+
+
+.date-range .arrow {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+
+.apply-btn,
+.cancel-btn {
+  background-color: #FAEAB1;
+  color: #000;
+  border: 2px solid #000;
+  padding: 8px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.apply-btn:hover,
+.cancel-btn:hover {
+  background-color: #C58940;
+  color: #fff;
+}
+
+.leave-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #333;
+}
+.leave-form input,
+.leave-form select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.leave-form textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 5px;
+  resize: vertical;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  margin-top: 5px;
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.arrow {
+  font-size: 18px;
+  font-weight: bold;
+  color: #555;
+}
+
+.required {
+  color: red;
+  margin-left: 5px;
+}
+
+
+
+
+
+
+
+
+/* Mobile Responsive Styles */
+@media (max-width: 600px) {
+  /* Summary Cards smaller on mobile */
+  .leave-summary-column {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .leave-card {
+    padding: 12px;
+    border-radius: 8px;
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+
+  .leave-card p {
+    font-size: 12px;
+    margin: 0;
+  }
+
+  .leave-card h3 {
+    font-size: 18px;
+    margin-top: 5px;
+  }
+
+  /* Table container scroll horizontally on mobile */
+  .leave-table-container {
+    overflow-x: auto;
+  }
+
+  /* Reduce font size and padding in table on mobile */
+  .leave-table th,
+  .leave-table td {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  /* Table headers font size smaller */
+  .leave-table th {
+    font-size: 13px;
+  }
+
+
+  /* In modal history table scroll max height smaller */
+  .history-table-wrapper {
+    max-height: 40vh !important;
+  }
+}
+@media (max-width: 600px) {
+  /* Existing mobile styles... */
+
+  /* Reduce calendar size on mobile */
+  .leave-calendar-modern {
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  /* Scale down calendar font and tile size */
+  .react-calendar {
+    font-size: 12px;
+  }
+
+  .react-calendar__tile {
+    max-width: 30px !important;
+    max-height: 30px !important;
+    padding: 4px !important;
+  }
+
+  .react-calendar__tile--now,
+  .react-calendar__tile--active {
+    border-radius: 6px !important;
+  }
+}
+

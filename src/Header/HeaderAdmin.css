@@ -1,4 +1,4 @@
-.main-header {
+.admin-header-container {
   height: 60px;
   background-color: white;
   display: flex;
@@ -13,39 +13,37 @@
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.menu-button {
+.admin-hamburger-btn {
   background: none;
   border: none;
   cursor: pointer;
   display: none;
 }
 
-.logo-text {
+.admin-header-title {
   font-size: 20px;
   font-weight: bold;
   color: #333;
 }
 
-.header-right {
+.admin-header-icons-row {
   display: flex;
   align-items: center;
   gap: 15px;
 }
 
+.admin-header-icon {
+  font-size: 24px;
+  color: #555;
+}
 
 /* Mobile header */
 @media (max-width: 768px) {
-  .main-header {
+  .admin-header-container {
     left: 0;
   }
 
-  .menu-button {
+  .admin-hamburger-btn {
     display: block;
   }
 }

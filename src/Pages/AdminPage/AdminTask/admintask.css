@@ -1,0 +1,385 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.task-container {
+  padding: 0 30px 30px 30px;
+  background-color: #f5f6fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Title */
+.task-tittle {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+/* Header */
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+/* Add Task Button */
+.add-task-btn {
+  background-color: #FAEAB1;
+  color: black;
+  border: 2px solid #000;
+  padding: 10px 18px;
+  font-size: 16px;
+  border-radius: 25px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.3s ease;
+}
+
+.add-task-btn:hover {
+  background-color: #C58940;
+}
+
+/* Filters */
+.task-filters {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.task-filters select,
+.task-filters input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  font-size: 15px;
+  background-color: #fff;
+}
+
+/* Table Styles */
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+.task-table th,
+.task-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+}
+
+.task-table th {
+  background-color: #C58940;
+  color: #fff;
+  font-weight: bold;
+}
+
+.task-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.task-row:hover {
+  background-color: #f9e79f;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.icon {
+  font-size: 20px;
+}
+
+/* Colorful button styles */
+.update-icon-btn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.update-icon-btn,
+.delete-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  padding: 8px 12px;
+  min-width: 100px; 
+  text-align: center;
+}
+
+
+
+.update-icon-btn:hover {
+  background-color: #218838;
+}
+
+.delete-icon-btn {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.delete-icon-btn:hover {
+  background-color: #c82333;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .task-filters {
+    flex-direction: column;
+  }
+
+  .task-modal-content {
+    max-width: 95vw;
+    padding: 15px;
+  }
+
+  .task-modal-content.large {
+    max-height: 80vh;
+  }
+}
+.task-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Popup container: increase width */
+.task-popup-content {
+  width: 600px;        /* wider popup */
+  max-width: 90vw;
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 8px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Close button style */
+.task-popup-close {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  font-size: 28px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Form container */
+.task-popup-form {
+  margin-top: 10px;
+}
+
+/* Rows with two inputs side by side */
+.task-input-inline-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+/* Each input container inside a row */
+.task-input-inline-row > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Label styling */
+.task-input-inline label,
+.task-input-inline-row label {
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Inputs and selects full width inside their containers */
+.task-input-inline input,
+.task-input-inline select,
+.task-input-inline textarea,
+.task-input-inline-row input,
+.task-input-inline-row select,
+.task-input-inline-row textarea {
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Textarea adjustments */
+.task-input-inline textarea {
+  resize: vertical;
+}
+
+/* Popup action buttons container */
+.task-popup-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+.task-popup-add-btn,
+.task-popup-cancel-btn {
+  background-color: #FAEAB1;      /* light yellow background */
+  color: black;                  /* black text */
+  border: 2px solid black;       /* black border with 2px thickness */
+  border-radius: 25px;           /* nice round edges */
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.task-popup-add-btn:hover,
+.task-popup-cancel-btn:hover {
+  background-color: #C58940;     /* darker yellow on hover */
+  color: white;                  /* text turns white on hover */
+  border-color: #C58940;         /* border matches background */
+}
+@media (max-width: 600px) {
+  /* Stack filter inputs vertically */
+  .task-filters {
+    flex-direction: column;
+  }
+
+  /* Popup overlay content adjustments */
+  .task-popup-content {
+    width: 95vw !important;   /* almost full width */
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 15px 20px;
+    border-radius: 10px;
+  }
+
+  /* Stack input pairs vertically instead of side-by-side */
+  .task-input-inline-row {
+    flex-direction: column;
+  }
+
+  /* Adjust padding & font size of inputs */
+  .task-input-inline-row > div,
+  .task-input-inline {
+    margin-bottom: 15px;
+  }
+
+  .task-input-inline input,
+  .task-input-inline select,
+  .task-input-inline textarea,
+  .task-input-inline-row input,
+  .task-input-inline-row select,
+  .task-input-inline-row textarea {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+
+  /* Reduce font size of labels */
+  .task-input-inline label,
+  .task-input-inline-row label {
+    font-size: 16px;
+  }
+
+  /* Buttons: full width with margin */
+  .task-popup-actions {
+    flex-direction: column;
+    gap: 12px;
+    justify-content: stretch;
+  }
+
+  .task-popup-add-btn,
+  .task-popup-cancel-btn {
+    width: 100%;
+    padding: 14px 0;
+    font-size: 16px;
+  }
+
+  /* Header and other text tweaks */
+  .task-tittle {
+    font-size: 22px;
+  }
+
+  /* Adjust filter inputs font size */
+  .task-filters select,
+  .task-filters input {
+    font-size: 16px;
+    padding: 12px;
+  }
+}
+/* Reuse your existing popup styles */
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .task-popup-content {
+    width: 95vw !important;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 15px 20px;
+    border-radius: 10px;
+  }
+
+  .task-input-inline-row {
+    flex-direction: column;
+  }
+
+  .task-input-inline-row > div,
+  .task-input-inline {
+    margin-bottom: 15px;
+  }
+
+  .task-input-inline input,
+  .task-input-inline select,
+  .task-input-inline textarea,
+  .task-input-inline-row input,
+  .task-input-inline-row select,
+  .task-input-inline-row textarea {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+
+  .task-input-inline label,
+  .task-input-inline-row label {
+    font-size: 16px;
+  }
+
+  .task-popup-actions {
+    flex-direction: column;
+    gap: 12px;
+    justify-content: stretch;
+  }
+
+  .task-popup-add-btn,
+  .task-popup-cancel-btn {
+    width: 100%;
+    padding: 14px 0;
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,259 @@
+.admin-employee-container {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+/* Header with Add New Employee button */
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.add-employee-button {
+  background-color: #f4da8e;
+  border: 2px rgb(26, 3, 3)e;
+  padding: 12px 20px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.add-employee-button:hover {
+  background-color: #e6c657;
+}
+
+
+/* Table wrapper for horizontal scroll */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+/* Table styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background-color: #f4f4f4;
+  font-weight: 600;
+}
+
+tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+
+
+/* Update button */
+.action-btn {
+  background-color: #4CAF50; /* green */
+  color: white;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  min-width: 80px;
+}
+
+.action-btn:hover {
+  background-color: #45a049;
+}
+
+/* Delete button */
+.action-btn.delete {
+  background-color: #f44336; /* red */
+  color: white;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.action-btn.delete:hover {
+  background-color: #da190b;
+}
+
+/* Confirm Delete Popup buttons container */
+.admin-button-group {
+  justify-content: center !important;
+  gap: 20px;
+  width: 100%;
+  margin-top: 25px;
+}
+
+/* Yes button in popup: red background, white text */
+.admin-button-group .action-btn.delete {
+  padding: 10px 30px;
+  min-width: 90px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  background-color: #e53935;
+  color: white;
+  transition: background-color 0.3s;
+}
+
+.admin-button-group .action-btn.delete:hover {
+  background-color: #b71c1c;
+}
+
+/* No button in popup: white background, red text, red border */
+.admin-button-group .action-btn {
+  padding: 10px 30px;
+  min-width: 90px;
+  font-weight: 600;
+  border-radius: 8px;
+  background-color: white;
+  color: #e53935;
+  border: 2px solid #e53935;
+  transition: background-color 0.3s, color 0.3s;
+  cursor: pointer;
+}
+
+.admin-button-group .action-btn:hover {
+  background-color: #fce4ec; /* light red/pink background on hover */
+  color: #ffffff;
+  border-color: #b71c1c;
+}
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center; /* vertically centers children */
+  text-align: center;      /* centers text inside */
+  padding: 25px;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 95%;
+}
+
+/* Increase gap between Update and Delete buttons */
+.action-btn:not(.delete) {
+  margin-right: 20px; /* increase from 8px to 20px */
+}
+
+/* Mobile responsiveness */
+@media (max-width: 600px) {
+  .admin-employee-container {
+    padding: 15px;
+    margin: 10px;
+  }
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+}
+.filters {
+  display: flex;
+  gap: 20px; /* space between filters */
+  margin: 20px 0;
+  flex-wrap: nowrap;
+}
+
+.department-filter,
+.search-input {
+  flex: 1;             /* each takes equal space */
+  padding: 10px 15px;  /* more padding */
+  border: 1px solid #ddd;
+  border-radius: 8px;  /* rounded corners */
+  min-width: 0;        /* to avoid overflow issues */
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+/* On smaller screens, stack vertically */
+@media (max-width: 600px) {
+  .filters {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .department-filter,
+  .search-input {
+    width: 100%;
+  }
+}
+
+.modal-content h3 {
+  margin-bottom: 15px;
+}
+
+.edit-form label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.edit-modal {
+  position: absolute; /* inside container */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4); /* dim effect */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99;
+}
+
+
+.modal-content.large {
+  background: white;
+  padding: 30px;
+  width: 1000px;          /* increase width */
+  max-width: 95vw;        /* max width relative to viewport */
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+
+  /* Prevent horizontal scroll inside modal */
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+
+.admin-member-form {
+  width: 100%;
+  max-width: 550px;
+}
+
+.modal-content h3 {
+  margin-bottom: 20px;
+}
+
+.admin-form-row {
+  margin-bottom: 12px;
+}
+
+
+.confirm-btn {
+  background-color: transparent;
+  border: none;
+  padding: 10px 25px;
+  width: 100px;
+  height: 40px;
+  cursor: pointer;
+  font-weight: 600;
+}

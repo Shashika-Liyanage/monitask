@@ -1,0 +1,185 @@
+.attendance-req-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Title */
+.attendance-req-title {
+  text-align: left;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+/* Filters */
+.attendance-req-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.attendance-req-input {
+  flex: 1 1 30%;
+  min-width: 200px;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: border-color 0.2s;
+}
+
+.attendance-req-input:focus {
+  border-color: #999;
+  outline: none;
+}
+
+/* Table */
+.attendance-req-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 30px;
+}
+
+.attendance-req-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.attendance-req-table thead {
+  background-color: #fff9db; /* light yellow */
+}
+
+.attendance-req-table th,
+.attendance-req-table td {
+  border: 1px solid #eee;
+  padding: 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+.attendance-req-table th{
+  background-color: #f1d4b0; /* Light brown/gold */
+
+}
+
+.attendance-req-table th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.attendance-req-table th:last-child {
+  border-top-right-radius: 8px;
+}
+
+
+.attendance-req-table tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* Cards */
+.attendance-req-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.attendance-req-card {
+  position: relative;
+  border: 1px solid #b5d4f3;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.attendance-req-avatar {
+  margin-bottom: 8px;
+}
+
+.attendance-req-avatar-icon {
+  font-size: 2.5rem;
+  color: #333;
+}
+
+.attendance-req-card-content strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.attendance-req-card-content p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.attendance-req-status-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 12px;
+  height: 12px;
+  background-color: #00c853;
+  border-radius: 50%;
+}
+
+
+@media (max-width: 600px) {
+  .attendance-req-filters {
+    flex-direction: column;
+  }
+  .attendance-req-btn {
+    width: 100%;
+  }
+}
+.attendance-req-actions {
+  display: flex;
+   justify-content: flex-end;
+   gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+/* Common button base */
+.attendance-req-btn {
+  padding: 12px 24px;
+  font-size: 1rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 200px;
+  text-align: center;
+  font-weight: 500;
+  border: 1px solid black; /* Add black border */
+}
+
+/* Leave button */
+.attendance-req-btn-leave-custom {
+  background-color: #f5e8d0;
+}
+
+.attendance-req-btn-leave-custom:hover {
+  background-color: #e0d4bb;
+}
+
+/* OK button */
+.attendance-req-btn-ok-custom {
+  background-color: #f5e8d0;
+}
+
+.attendance-req-btn-ok-custom:hover {
+  background-color: #e0d4bb;
+}
+
+/* Mobile full width */
+@media (max-width: 600px) {
+  .attendance-req-btn {
+    width: 100%;
+  }
+}

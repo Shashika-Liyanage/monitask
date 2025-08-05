@@ -1,0 +1,138 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+/* Container */
+.task-container {
+  padding: 0 30px 30px 30px; /* top padding is now 0 */
+  background-color: #f5f6fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+.task-tittle {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+/* Table Styles */
+.task-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+.task-table th,
+.task-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.task-table th {
+  background-color: #d6c590;
+  color: #333;
+}
+
+.task-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.task-row:hover {
+  background-color: #f9e79f;
+}
+.view-all-btn-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+/* Button */
+.view-all-btn {
+ background-color: #FAEAB1;
+  color: rgb(6, 1, 1);
+  border: 2px solid #000;
+  padding: 12px 20px;
+  font-size: 15px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+ 
+}
+
+.view-all-btn:hover {
+  background-color: #C58940;
+}
+
+
+/* Replace `.modal-overlay` with `.task-modal-overlay` */
+.task-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 10px;
+  overflow: auto;
+}
+
+/* Replace `.modal-content` with `.task-modal-content` */
+.task-modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.task-modal-content.large {
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.task-modal-content ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.task-modal-content ul li {
+  margin-bottom: 8px;
+}
+
+.task-modal-content button {
+  background-color: #c58940;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.task-modal-content button:hover {
+  background-color: #a66d30;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .task-modal-content {
+    max-width: 95vw;
+    padding: 15px;
+  }
+
+  .task-modal-content.large {
+    max-height: 80vh;
+  }
+}
