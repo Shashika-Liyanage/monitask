@@ -2,6 +2,12 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
+from attendance import increment_attendance, get_attendance
+
+# Example usageimport to main file
+if __name__ == "__main__":
+    new_count = increment_attendance()
+    print(f"Attendance count updated to: {new_count}")
 
 # Setup MediaPipe Face Mesh
 mp_face_mesh = mp.solutions.face_mesh
