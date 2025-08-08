@@ -278,3 +278,30 @@ legend {
 .admin-upload-controls button {
   margin-top: 6px;
 }
+/* Enhanced Select Dropdown Styles */
+.admin-form-row select {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background-color: #fffef5;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%236b4f1d' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.admin-form-row select:focus {
+  border-color: #d2b48c;
+  box-shadow: 0 0 5px rgba(210, 180, 140, 0.5);
+  outline: none;
+}
+
+/* Placeholder Option Styling */
+.admin-form-row select option[disabled] {
+  color: #888;
+}
