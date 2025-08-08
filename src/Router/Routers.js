@@ -23,15 +23,12 @@ const Routers = () => {
         <Route index element={<Navigate to="/adminDash" />} />
         <Route path="/employeeDash" element={<EmployeeDashboard />} />
       </Route>
-
       <Route path="/employeeProfile" element={<EmployeeProfile />} />
       <Route path="/employeeAttendance" element={<EmployeeAttendance />} />
       <Route path="/employeeLeave" element={<Employeeleave />} />
       <Route path="/employeePerformance" element={<EmployeePerformance />} />
       <Route path="/employeeTask" element={<EmployeeTask />} />
-
       <Route path="/adminLayout" element={<AdminLayout />}></Route>
-
       <Route path="/adminDash" element={<AdminDashboard />} />
       <Route path="/adminProfileManage" element={<AdminProfileManage />} />
       <Route path="/adminProfileadd" element={<MemberAdd />} />
