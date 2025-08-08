@@ -2,9 +2,10 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
-from attendance import increment_attendance, get_attendance
+from datetime import datetime  # added for date/time logging
+from attendance import increment_attendance, get_attendance_count, get_attendance_log
 
-# Example usageimport to main file
+# Example usage
 if __name__ == "__main__":
     new_count = increment_attendance()
     print(f"Attendance count updated to: {new_count}")
@@ -70,13 +71,13 @@ while True:
             ratio = px / eye_width
 
             if ratio < 0.3 or ratio > 0.7:
-                message = "⚠️ Looking Away"
+                message = "Looking Away"
 
                 if not looking_away:
                     away_start_time = time.time()
                     looking_away = True
             else:
-                message = "✅ Looking Forward"
+                message = "Looking Forward"
 
                 if looking_away:
                     last_away_duration = time.time() - away_start_time
@@ -87,9 +88,10 @@ while True:
                         mins = int(last_away_duration // 60)
                         secs = int(last_away_duration % 60)
                         duration_str = f"{mins:02}:{secs:02}"
+                        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Timestamp
 
                         with open("look_away_log.txt", "a") as f:
-                            f.write(f"Looked away for {duration_str}\n")
+                            f.write(f"Looked away for {duration_str} at {current_time}\n")  # Log with date/time
         else:
             message = "Pupil not found"
 
@@ -100,7 +102,7 @@ while True:
 
     mins = int(duration // 60)
     secs = int(duration % 60)
-    timer_text = f"⏱ Looked Away: {mins:02}:{secs:02}"
+    timer_text = f"Looked Away: {mins:02}:{secs:02}"
 
     cv2.putText(frame, message, (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 1.0,

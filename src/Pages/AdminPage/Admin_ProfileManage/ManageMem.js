@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import AdminLayout from "../../../Layout/Admin_Layout/AdminL";
-import Person3SharpIcon from '@mui/icons-material/Person3Sharp';
-import EditSharpIcon from '@mui/icons-material/EditSharp';
+import Person3SharpIcon from "@mui/icons-material/Person3Sharp";
+import EditSharpIcon from "@mui/icons-material/EditSharp";
 import "./ManageMem.css";
 
 function MemberAdd() {
@@ -60,27 +60,37 @@ function MemberAdd() {
               <legend>Member Details</legend>
 
               <div className="admin-form-row">
-                <label>Member ID<span>*</span></label>
+                <label>
+                  Member ID<span>*</span>
+                </label>
                 <input type="text" />
               </div>
 
               <div className="admin-form-row">
-                <label>Full Name<span>*</span></label>
+                <label>
+                  Full Name<span>*</span>
+                </label>
                 <input type="text" />
               </div>
 
               <div className="admin-form-row">
-                <label>Address<span>*</span></label>
+                <label>
+                  Address<span>*</span>
+                </label>
                 <input type="text" />
               </div>
 
               <div className="admin-form-row">
-                <label>Phone<span>*</span></label>
+                <label>
+                  Phone<span>*</span>
+                </label>
                 <input type="tel" />
               </div>
 
               <div className="admin-form-row">
-                <label>Email<span>*</span></label>
+                <label>
+                  Email<span>*</span>
+                </label>
                 <input type="email" />
               </div>
 
@@ -102,17 +112,23 @@ function MemberAdd() {
               <legend>Role Details</legend>
 
               <div className="admin-form-row">
-                <label>Role<span>*</span></label>
+                <label>
+                  Role<span>*</span>
+                </label>
                 <input type="text" />
               </div>
 
               <div className="admin-form-row">
-                <label>Department<span>*</span></label>
+                <label>
+                  Department<span>*</span>
+                </label>
                 <input type="text" />
               </div>
 
               <div className="admin-form-row">
-                <label>Join Date<span>*</span></label>
+                <label>
+                  Join Date<span>*</span>
+                </label>
                 <input type="date" />
               </div>
             </fieldset>
@@ -120,11 +136,14 @@ function MemberAdd() {
 
           {/* Submit Button */}
           {/* Action Buttons */}
-<div className="admin-button-group">
-  <button type="submit" className="admin-submit-btn">Add</button>
-  <button type="button" className="admin-cancel-btn">Cancel</button>
-</div>
-
+          <div className="admin-button-group">
+            <button type="submit" className="admin-submit-btn">
+              Add
+            </button>
+            <button type="button" className="admin-cancel-btn">
+              Cancel
+            </button>
+          </div>
         </form>
 
         {showPasswordModal && (
@@ -132,14 +151,18 @@ function MemberAdd() {
             <div className="admin-modal-box">
               <h3>Change Password</h3>
 
-              <label>New Password<span>*</span></label>
+              <label>
+                New Password<span>*</span>
+              </label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
 
-              <label>Confirm Password<span>*</span></label>
+              <label>
+                Confirm Password<span>*</span>
+              </label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -148,7 +171,9 @@ function MemberAdd() {
 
               <div className="admin-modal-actions">
                 <button onClick={handlePasswordSubmit}>OK</button>
-                <button onClick={() => setShowPasswordModal(false)}>Cancel</button>
+                <button onClick={() => setShowPasswordModal(false)}>
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
