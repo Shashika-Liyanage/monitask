@@ -23,7 +23,6 @@ const Routers = () => {
         <Route index element={<Navigate to="/adminDash" />} />
         <Route path="/employeeDash" element={<EmployeeDashboard />} />
       </Route>
-
       <Route path="/employeeProfile" element={<EmployeeProfile />} />
       <Route path="/employeeAttendance" element={<EmployeeAttendance />} />
       <Route path="/employeeLeave" element={<Employeeleave />} />
