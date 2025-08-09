@@ -224,7 +224,7 @@ const deleteRecord = async (firebaseId) => {
                     </button>
                     <button
                       className="action-btn delete"
-                      onClick={() => deleteRecord(employees.firebaseId)}
+                      onClick={() => deleteRecord(emp.firebaseId)}
                     >
                       <DeleteRoundedIcon
                         style={{ fontSize: 12, marginRight: 5 }}
