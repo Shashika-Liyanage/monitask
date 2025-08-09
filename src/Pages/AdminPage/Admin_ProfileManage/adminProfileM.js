@@ -7,8 +7,7 @@ import EditSharpIcon from "@mui/icons-material/EditSharp";
 import "./adminProfileM.css";
 import { useNavigate, useParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
-import { getDatabase, ref, get, remove } from "firebase/database";
-
+import { getDatabase, ref, get, remove, set } from "firebase/database";
 const AdminProfileManage = () => {
   const { firebaseId } = useParams();
   const fileInputRef = useRef(null);
@@ -24,6 +23,8 @@ const AdminProfileManage = () => {
   //fethc the data and show via the table
   const [employees, setEmployees] = useState([]);
   useEffect(() => {
+    fetchData();
+  }, []);
     const fetchData = async () => {
       const db = getDatabase();
       const dbRef = ref(db, "createEmployee/newEmployee");
@@ -41,10 +42,27 @@ const AdminProfileManage = () => {
       }
     };
 
-    fetchData();
-  }, []);
+  const updateRecord = async (firebaseId) => {
+  try {
+    const db = getDatabase();
+    const recordRef = ref(db, `createEmployee/newEmployee/${firebaseId}`);
 
-  const deleteRecord = async (firebaseId) => {
+    if (!firebaseId) throw new Error("Invalid firebaseId");
+    const {memberID,fullname,dOJ,department,rols,phoneNumber,address,email,} = formData;
+    if (!memberID || !fullname || !dOJ || !department || !rols || !phoneNumber) {
+      throw new Error("Missing required fields");
+    }
+    await set(recordRef, {memberID,fullname,dOJ,department,rols,phoneNumber,address,email,firebaseId, // store firebaseId too, if you want
+    });
+    toast.success("Record updated successfully");
+    fetchData(); // make sure fetchData is defined to reload data
+
+  } catch (error) {
+    console.error("Error updating record:", error);
+    toast.error("Failed to update record");
+  }
+};
+const deleteRecord = async (firebaseId) => {
     try {
       console.log("Attempting to delete record with Firebase ID:", firebaseId);
 
@@ -70,16 +88,20 @@ const AdminProfileManage = () => {
     navigate("/adminProfileadd");
   };
 
-  const openUpdateModal = (employee) => {
-    const fullDetails = {
+  const openUpdateModal = (employee, idx) => {
+    const employees = {
       ...employee,
-      address: "123 Example St",
-      phone: "0771234567",
-      email: "john@example.com",
-      joinDate: "2023-05-15",
+      key: idx,
+      firebaseId: employee.firebaseId, 
+      memberID: employee.memberID,
+      fullname: employee.fullname,
+      department: employee.department,
+      rols: employee.rols,
+      phoneNumber: employee.phoneNumber,
+      dOJ: employee.dOJ,
     };
-    setSelectedEmployee(fullDetails);
-    setFormData(fullDetails);
+    setSelectedEmployee(employees);
+    setFormData(employees);
     setIsModified(false);
     setShowModal(true);
   };
@@ -118,7 +140,7 @@ const AdminProfileManage = () => {
   };
 
   const handleEditClick = () => {
-    fileInputRef.current.click();
+ fileInputRef.current.click();
   };
 
   const handlePasswordClick = (e) => {
@@ -202,7 +224,7 @@ const AdminProfileManage = () => {
                     </button>
                     <button
                       className="action-btn delete"
-                      onClick={() => deleteRecord(emp.firebaseId)}
+                      onClick={() => deleteRecord(employees.firebaseId)}
                     >
                       <DeleteRoundedIcon
                         style={{ fontSize: 12, marginRight: 5 }}
@@ -262,9 +284,10 @@ const AdminProfileManage = () => {
                         <input
                           type="text"
                           name="id"
-                          value={formData.id || ""}
+                          value={formData.memberID || ""}
                           onChange={handleInputChange}
                           readOnly
+                          disabled
                         />
                       </div>
                       <div className="admin-form-row">
@@ -273,8 +296,8 @@ const AdminProfileManage = () => {
                         </label>
                         <input
                           type="text"
-                          name="name"
-                          value={formData.name || ""}
+                          name="fullname"
+                          value={formData.fullname || ""}
                           onChange={handleInputChange}
                         />
                       </div>
@@ -295,8 +318,8 @@ const AdminProfileManage = () => {
                         </label>
                         <input
                           type="tel"
-                          name="phone"
-                          value={formData.phone || ""}
+                          name="phoneNumber"
+                          value={formData.phoneNumber || ""}
                           onChange={handleInputChange}
                         />
                       </div>
@@ -315,9 +338,18 @@ const AdminProfileManage = () => {
                         <label>Change Password</label>
                         <input
                           type="password"
-                          placeholder="Click to change"
-                          readOnly
-                          onClick={handlePasswordClick}
+                          placeholder="Enter Password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                      </div>
+                      <div className="admin-form-row">
+                        <label>Confirm Password</label>
+                        <input
+                          type="password"
+                          placeholder="Again Enter Password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
                         />
                       </div>
                     </fieldset>
@@ -333,8 +365,8 @@ const AdminProfileManage = () => {
                         </label>
                         <input
                           type="text"
-                          name="role"
-                          value={formData.role || ""}
+                          name="rols"
+                          value={formData.rols || ""}
                           onChange={handleInputChange}
                         />
                       </div>
@@ -355,8 +387,8 @@ const AdminProfileManage = () => {
                         </label>
                         <input
                           type="date"
-                          name="joinDate"
-                          value={formData.joinDate || ""}
+                          name="dOJ"
+                          value={formData.dOJ || ""}
                           onChange={handleInputChange}
                         />
                       </div>
@@ -367,7 +399,7 @@ const AdminProfileManage = () => {
                 {/* Buttons Below */}
                 <div className="admin-button-group">
                   {isModified && (
-                    <button type="submit" className="admin-submit-btn">
+                    <button   onClick={() => updateRecord(formData.firebaseId)} type="submit" className="admin-submit-btn">
                       Update
                     </button>
                   )}
@@ -385,7 +417,7 @@ const AdminProfileManage = () => {
         )}
 
         {/* Password Change Modal */}
-        {showPasswordModal && (
+        {/* {showPasswordModal && (
           <div className="admin-modal-overlay">
             <div className="admin-modal-box">
               <h3>Change Password</h3>
@@ -412,8 +444,8 @@ const AdminProfileManage = () => {
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          </div>  
+        )} */}
         {showDeleteConfirm && (
           <div className="edit-modal">
             <div className="modal-content">
