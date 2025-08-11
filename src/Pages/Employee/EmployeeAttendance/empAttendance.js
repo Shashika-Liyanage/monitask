@@ -16,8 +16,15 @@ function EmployeeAttendance() {
   const [attendanceText, setAttendanceText] = useState("");
   const [attendanceData, setAttendanceData] = useState({});
   const [overtime, setOvertime] = useState("00:00:00");
+  const [status, setStatus] = useState("");
+  const [absentCount, setAbsentCount] = useState(0);
+  const [lateCount, setLateCount] = useState(0);
+  const [presentCount, setPresentCount] = useState(0);
+  const WORK_START_SECONDS = 8 * 3600; // 08:00:00
+  const WORK_END_SECONDS = 17 * 3600; // 17:00:00
 
-useEffect(() => {
+  // Fetch attendance text file
+  useEffect(() => {
     fetch(attendance_log)
       .then((res) => res.text())
       .then((text) => {
@@ -26,6 +33,7 @@ useEffect(() => {
       .catch((err) => console.error(err));
   }, [attendance_log]);
 
+  // Parse attendance text and calculate absent/late/present counts
   useEffect(() => {
     if (!attendanceText) return;
 
@@ -43,16 +51,40 @@ useEffect(() => {
       }
     });
 
+    const dates = Object.keys(data);
+
+    let absent = 0;
+    let late = 0;
+    let present = 0;
+
+    dates.forEach((date) => {
+      const rec = data[date];
+      if (!rec.checkIn && !rec.checkOut) {
+        absent++;
+      } else {
+        present++;
+        if (rec.checkIn) {
+          const checkInSec = timeToSeconds(rec.checkIn);
+          if (checkInSec > WORK_START_SECONDS) {
+            late++;
+          }
+        }
+      }
+    });
+
     setAttendanceData(data);
+    setAbsentCount(absent);
+    setLateCount(late);
+    setPresentCount(present);
   }, [attendanceText]);
 
-  // Helper to convert "HH:MM:SS" to seconds
+  // Helper: convert HH:MM:SS string to total seconds
   const timeToSeconds = (timeStr) => {
     const [h, m, s] = timeStr.split(":").map(Number);
     return h * 3600 + m * 60 + s;
   };
 
-  // Helper to convert seconds to "HH:MM:SS"
+  // Helper: convert total seconds to HH:MM:SS string
   const secondsToHHMMSS = (secs) => {
     const h = Math.floor(secs / 3600)
       .toString()
@@ -61,32 +93,42 @@ useEffect(() => {
       .toString()
       .padStart(2, "0");
     const s = (secs % 60).toString().padStart(2, "0");
-    return `${h} Hours ${m} Mins ${s} Sec `;
+    return `${h}:${m}:${s}`;
   };
 
-  // Calculate OT when checkIn or checkOut changes
+  // Calculate overtime and status when checkIn or checkOut changes
   useEffect(() => {
     if (!checkIn && !checkOut) {
       setOvertime("00:00:00");
+      setStatus("");
       return;
     }
 
-    const workStart = timeToSeconds("08:00:00");
-    const workEnd = timeToSeconds("17:00:00");
-    const checkInSec = checkIn ? timeToSeconds(checkIn) : workStart;
-    const checkOutSec = checkOut ? timeToSeconds(checkOut) : workEnd;
+    const checkInSec = checkIn ? timeToSeconds(checkIn) : WORK_START_SECONDS;
+    const checkOutSec = checkOut ? timeToSeconds(checkOut) : WORK_END_SECONDS;
 
     let otSeconds = 0;
-
-    // OT before 8 AM
-    if (checkInSec < workStart) otSeconds += workStart - checkInSec;
-
-    // OT after 5 PM
-    if (checkOutSec > workEnd) otSeconds += checkOutSec - workEnd;
-
+    if (checkInSec < WORK_START_SECONDS) otSeconds += WORK_START_SECONDS - checkInSec;
+    if (checkOutSec > WORK_END_SECONDS) otSeconds += checkOutSec - WORK_END_SECONDS;
     setOvertime(secondsToHHMMSS(otSeconds));
+
+    let newStatus = "";
+    if (checkInSec > WORK_START_SECONDS) {
+      newStatus = "Late";
+    } else {
+      newStatus = "On time";
+    }
+
+    if (checkOutSec < WORK_END_SECONDS) {
+      newStatus = newStatus === "Late" ? "Late & Half day" : "Half day";
+    } else {
+      if (newStatus === "On time") newStatus = "Full day";
+    }
+
+    setStatus(newStatus);
   }, [checkIn, checkOut]);
 
+  // Update checkIn, checkOut, status, overtime when selected date changes
   useEffect(() => {
     const dateStr = selectedDate.toISOString().slice(0, 10);
     if (attendanceData[dateStr]) {
@@ -95,6 +137,8 @@ useEffect(() => {
     } else {
       setCheckIn("");
       setCheckOut("");
+      setStatus("");
+      setOvertime("00:00:00");
     }
   }, [selectedDate, attendanceData]);
   const handleDateClick = (date) => {
@@ -122,26 +166,6 @@ useEffect(() => {
   ];
   const navigate = useNavigate();
 
-  const handleTimeChange = () => {
-    if (!checkIn || !checkOut) return;
-
-    const [inHour, inMin] = checkIn.split(":").map(Number);
-    const [outHour, outMin] = checkOut.split(":").map(Number);
-    const checkInMins = inHour * 60 + inMin;
-    const checkOutMins = outHour * 60 + outMin;
-
-    const workStart = 9 * 60; // 9:00
-    const workEnd = 17 * 60; // 17:00
-
-    const worked = checkOutMins - checkInMins;
-    const standardWork = workEnd - workStart;
-    const extra = worked - standardWork;
-
-    setExtraTime(
-      extra > 0 ? `${Math.floor(extra / 60)}h ${extra % 60}m` : "0h 0m"
-    );
-  };
-
   return (
     <EmployeeLayout>
       <div className="attendance-container">
@@ -159,15 +183,15 @@ useEffect(() => {
           <div className="attendance-summary-vertical">
             <div className="attendance-card present">
               <p>Present Days</p>
-              <h3>22</h3>
+              <h3>{presentCount}</h3>
             </div>
             <div className="attendance-card absent">
               <p>Absent Days</p>
-              <h3>2</h3>
+              <h3>{absentCount}</h3>
             </div>
             <div className="attendance-card late">
               <p>Late Days</p>
-              <h3>1</h3>
+              <h3>{lateCount}</h3>
             </div>
           </div>
         </div>
@@ -239,7 +263,8 @@ useEffect(() => {
               />
 
               <p>
-     <p>Overtime (OT) : {overtime}</p>
+                <p>Overtime (OT) : {overtime}</p>
+                <p>Status: {status}</p>
               </p>
 
               {/* <button
