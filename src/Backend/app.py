@@ -84,7 +84,7 @@ while True:
                     looking_away = False
 
                     # Log only if away duration > 1 second
-                    if last_away_duration > 1:
+                    if last_away_duration > 10:
                         mins = int(last_away_duration // 60)
                         secs = int(last_away_duration % 60)
                         duration_str = f"{mins:02}:{secs:02}"

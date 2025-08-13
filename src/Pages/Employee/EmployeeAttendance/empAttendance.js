@@ -5,6 +5,7 @@ import "react-calendar/dist/Calendar.css";
 import "./empAttendance.css";
 import { useNavigate } from "react-router-dom";
 import attendance_log from "../../../Backend/attendance_log.txt";
+import lookaway_log from "../../../Backend/look_away_log.txt.txt";
 function EmployeeAttendance() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
@@ -14,6 +15,7 @@ function EmployeeAttendance() {
   const [showFullView, setShowFullView] = useState(false);
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth()); // 0 = Jan
   const [attendanceText, setAttendanceText] = useState("");
+  const [lookawayText, setlookAwayText] = useState("");
   const [attendanceData, setAttendanceData] = useState({});
   const [overtime, setOvertime] = useState("00:00:00");
   const [status, setStatus] = useState("");
@@ -33,13 +35,31 @@ function EmployeeAttendance() {
       .catch((err) => console.error(err));
   }, [attendance_log]);
 
+  // Fetch lookaway text file
+  useEffect(() => {
+    fetch(lookaway_log)
+      .then((res) => res.text())
+      .then((text) => {
+        setlookAwayText(text);
+      })
+      .catch((err) => console.error(err));
+  }, [lookaway_log]);
+
+  useEffect(() => {
+    if (!lookawayText) return;
+    const liness = lookawayText.split("\n").map((lineOne = lineOne.trim()));
+    const datasets={};
+    const regexs =/^Looked away for (\d{2}:\d{2}) at (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})$/
+  });
+
   // Parse attendance text and calculate absent/late/present counts
   useEffect(() => {
     if (!attendanceText) return;
 
     const lines = attendanceText.split("\n").map((line) => line.trim());
     const data = {};
-    const regex = /Attendance #(\w+) at (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/;
+    const regex =
+      /Attendance #(\w+) at (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/;
 
     lines.forEach((line) => {
       const match = line.match(regex);
@@ -108,8 +128,10 @@ function EmployeeAttendance() {
     const checkOutSec = checkOut ? timeToSeconds(checkOut) : WORK_END_SECONDS;
 
     let otSeconds = 0;
-    if (checkInSec < WORK_START_SECONDS) otSeconds += WORK_START_SECONDS - checkInSec;
-    if (checkOutSec > WORK_END_SECONDS) otSeconds += checkOutSec - WORK_END_SECONDS;
+    if (checkInSec < WORK_START_SECONDS)
+      otSeconds += WORK_START_SECONDS - checkInSec;
+    if (checkOutSec > WORK_END_SECONDS)
+      otSeconds += checkOutSec - WORK_END_SECONDS;
     setOvertime(secondsToHHMMSS(otSeconds));
 
     let newStatus = "";
@@ -156,13 +178,13 @@ function EmployeeAttendance() {
       checkOut: "05:00 PM",
       status: "Present",
     },
-    { date: "2025-07-02", checkIn: "-", checkOut: "-", status: "Absent" },
-    {
-      date: "2025-08-01",
-      checkIn: "09:10 AM",
-      checkOut: "05:10 PM",
-      status: "Present",
-    },
+    //{ date: "2025-07-02", checkIn: "-", checkOut: "-", status: "Absent" },
+    // {
+    //   date: "2025-08-01",
+    //   checkIn: "09:10 AM",
+    //   checkOut: "05:10 PM",
+    //   status: "Present",
+    // },
   ];
   const navigate = useNavigate();
 
