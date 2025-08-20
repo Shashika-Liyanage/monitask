@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import firebaseConfig from "../services/firebaseConfig";
+import { auth } from "../services/firebaseConfig";
+import { onAuthStateChanged } from "firebase/auth";
 
 export const AuthContext = React.createContext();
 
@@ -8,11 +9,13 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    const unsubscribe = firebaseConfig.auth().onAuthStateChanged((user) => {
+    // Listen for authentication state changes
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setLoading(false);
     });
-    return unsubscribe; // Cleanup function to unsubscribe when component unmounts
+
+    return unsubscribe; // Cleanup on unmount
   }, []);
 
   if (loading) {

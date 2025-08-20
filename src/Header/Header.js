@@ -1,8 +1,20 @@
 import React from 'react';
-import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
+import LogoutIcon from '@mui/icons-material/Logout';
 import Person4RoundedIcon from '@mui/icons-material/Person4Rounded';
-
+import { signOut } from "firebase/auth";
+import { auth } from "../Service/FirebaseConfig";
+import { useNavigate } from "react-router-dom";
 function EmployeeHeaderView({ onToggleSidebar }) {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);          // Sign out from Firebase
+      navigate("/");                // Redirect to login page
+    } catch (error) {
+      console.error("Logout Error:", error);
+    }
+  };
   return (
     <div className="employee-header-container">
       {/* Hamburger (mobile only) */}
@@ -14,7 +26,7 @@ function EmployeeHeaderView({ onToggleSidebar }) {
 
       {/* Icons on the right */}
       <div className="header-icons-row">
-        <NotificationsRoundedIcon className="header-icon" />
+        <LogoutIcon onClick={handleLogout} titleAccess='Log Out' className="header-icon" />
         <Person4RoundedIcon className="header-icon" />
       </div>
     </div>
