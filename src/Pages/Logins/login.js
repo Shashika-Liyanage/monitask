@@ -4,6 +4,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { auth } from "../../Service/FirebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import toast, { Toaster } from "react-hot-toast";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,15 +20,19 @@ function Login() {
         password
       );
       console.log("Logged in user:", userCredential.user);
+       toast.success("Logged in successfully!");
       navigate("/dashboard");
+   
       // Redirect or show dashboard here
     } catch (err) {
       setError(err.message);
+      toast.error(err.message);
     }
   };
 
   return (
     <div className="login-container">
+        <Toaster />
       <form onSubmit={handleSubmit} className="login-form">
         <h2>Login</h2>
         {error && <div className="error">{error}</div>}

@@ -22,8 +22,9 @@ const Routers = () => {
     <Routes>
       <Route path="/" element={<Login />}>
         <Route index element={<Navigate to="/adminDash" />} />
-        <Route path="/employeeDash" element={<EmployeeDashboard />} />
+        
       </Route>
+      <Route path="/employeeDash" element={<EmployeeDashboard />} />
       <Route path="/employeeProfile" element={<EmployeeProfile />} />
       <Route path="/employeeAttendance" element={<EmployeeAttendance />} />
       <Route path="/employeeLeave" element={<Employeeleave />} />
