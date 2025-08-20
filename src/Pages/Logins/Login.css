@@ -33,7 +33,7 @@
 }
 
 .form-group input {
-    width: 10%;
+    width: 93%;
     padding: 10px 12px;
     border: 1px solid #dcdde1;
     border-radius: 8px;
@@ -53,6 +53,7 @@
     width: 100%;
     cursor: pointer;
     padding: 12px;
+    margin-top: 10px;
     background-color: #0984e3;
     border: none;
     border-radius: 8px;

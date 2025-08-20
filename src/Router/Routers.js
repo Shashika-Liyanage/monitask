@@ -15,11 +15,12 @@ import AdminAttendanceReq from "../Pages/AdminPage/AdminAttendence/adminAttenden
 import AdminLeaveReq from "../Pages/AdminPage/AdminAttendence/adminLeave";
 import AdminPerformance from "../Pages/AdminPage/AdminPerform/adminPerform";
 import AdminTaskManage from "../Pages/AdminPage/AdminTask/adminTask";
+import Login from "../Pages/Logins/login";
 
 const Routers = () => {
   return (
     <Routes>
-      <Route path="/" element={<EmployeeLayout />}>
+      <Route path="/" element={<Login />}>
         <Route index element={<Navigate to="/adminDash" />} />
         <Route path="/employeeDash" element={<EmployeeDashboard />} />
       </Route>
@@ -35,7 +36,8 @@ const Routers = () => {
       <Route path="/adminAttendance" element={<AdminAttendanceReq />} />
       <Route path="/adminLeave" element={<AdminLeaveReq />} />
       <Route path="/adminPerformance" element={<AdminPerformance />} />
-      <Route path="/adminTask" element={<AdminTaskManage />} />
+      <Route path="/adminTask" element={<AdminTaskManage />} /> 
+      <Route path="/dashboard" element={<EmployeeLayout />} /> 
     </Routes>
   );
 };

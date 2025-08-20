@@ -5,7 +5,7 @@ import "react-calendar/dist/Calendar.css";
 import "./empAttendance.css";
 import { useNavigate } from "react-router-dom";
 import attendance_log from "../../../Backend/attendance_log.txt";
-import lookaway_log from "../../../Backend/look_away_log.txt.txt";
+import lookaway_log from "../../../Backend/look_away_log.txt";
 function EmployeeAttendance() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
@@ -45,12 +45,7 @@ function EmployeeAttendance() {
       .catch((err) => console.error(err));
   }, [lookaway_log]);
 
-  useEffect(() => {
-    if (!lookawayText) return;
-    const liness = lookawayText.split("\n").map((lineOne = lineOne.trim()));
-    const datasets={};
-    const regexs =/^Looked away for (\d{2}:\d{2}) at (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})$/
-  });
+
 
   // Parse attendance text and calculate absent/late/present counts
   useEffect(() => {
