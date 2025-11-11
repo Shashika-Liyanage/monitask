@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import AdminLayout from "../../../Layout/Admin_Layout/AdminL";
-import Person3SharpIcon from '@mui/icons-material/Person3Sharp';
-import EditSharpIcon from '@mui/icons-material/EditSharp';
+import Person3SharpIcon from "@mui/icons-material/Person3Sharp";
+import EditSharpIcon from "@mui/icons-material/EditSharp";
 import "./ManageMem.css";
+import bcrypt from "bcryptjs";
 import toast, { Toaster } from "react-hot-toast";
 import {
   getDatabase,
@@ -104,13 +105,14 @@ if (!inputFullName ||
     const recordsRef = ref(db, "createEmployee/newEmployee/");
     try {
       const newRecordRef = push(recordsRef);
+      const hashedPassword = await bcrypt.hash(inputPassword, 10);
       await set(newRecordRef, {
         memberID: memberID,
         fullname: inputFullName,
         address: inputAddress,
         phoneNumber: inputPhoneNumber,
         email: inputEmail,
-        password: inputPassword,
+        password: hashedPassword,
         rols:inputRole,
         department:inputDepartment,
         dOJ:inputDoj
@@ -238,16 +240,15 @@ if (!inputFullName ||
           <div className="admin-modal-overlay">
             <div className="admin-modal-box">
               <h3>Change Password</h3>
-
               <label>New Password<span>*</span></label>
               <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-
               <label>Confirm Password<span>*</span></label>
               <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-
               <div className="admin-modal-actions">
                 <button onClick={handlePasswordSubmit}>OK</button>
-                <button onClick={() => setShowPasswordModal(false)}>Cancel</button>
+                <button onClick={() => setShowPasswordModal(false)}>
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
