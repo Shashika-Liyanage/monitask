@@ -4,24 +4,36 @@ import "./adminPerform.css";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-
-// --- Firebase Imports ---
-import {
-  ref,
-  set,
-  update,
-  remove,
-  onValue,
-  push, // --- ADDED: Import push for auto-IDs ---
-} from "firebase/database";
+import { ref, set, update, remove, onValue, push } from "firebase/database";
 import { database } from "../../../Service/FirebaseConfig";
+
+// Toast Component
+const Toast = ({ message, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="toast-container">
+      <div className="toast-message">
+        {message}
+      </div>
+    </div>
+  );
+};
 
 function AdminPerformance() {
   const [filterDept, setFilterDept] = useState("");
   const [filterEmpId, setFilterEmpId] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  
+  // Toast state
+  const [toast, setToast] = useState({ show: false, message: '' });
 
-  // --- UPDATED: Removed feedbackId ---
   const initialFormState = {
     empId: "",
     name: "",
@@ -34,74 +46,73 @@ function AdminPerformance() {
   };
 
   const [newPerformance, setNewPerformance] = useState(initialFormState);
-
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [selectedPerformance, setSelectedPerformance] = useState(null);
   const [originalPerformance, setOriginalPerformance] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
-
   const [performances, setPerformances] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- Fetch data (No changes needed) ---
+  // Function to show toast
+  const showToast = (message) => {
+    setToast({ show: true, message });
+  };
+
+  // Function to hide toast
+  const hideToast = () => {
+    setToast({ show: false, message: '' });
+  };
+
+  // Fetch data
   useEffect(() => {
     setLoading(true);
     const collectionRef = ref(database, "performanceReviews");
-
     const unsubscribe = onValue(
       collectionRef,
       (snapshot) => {
         const data = snapshot.val();
         const reviewsList = [];
-        
         if (data) {
           for (let id in data) {
             reviewsList.push({ id, ...data[id] });
           }
         }
-        
         setPerformances(reviewsList);
         setLoading(false);
       },
       (error) => {
         console.error("Error fetching performance data: ", error);
-        alert("Could not fetch performance data.");
+        showToast("Could not fetch performance data.");
         setLoading(false);
       }
     );
-
     return () => unsubscribe();
   }, []);
 
-  // --- UPDATED: 2. Handle Add New Performance ---
+  // Handle Add New Performance
   const handleAddPerformance = async () => {
-    // --- UPDATED: Removed feedbackId from validation ---
     if (!newPerformance.empId || !newPerformance.name) {
-      alert("Please fill in Employee ID and Name.");
+      showToast("Please fill in Employee ID and Name.");
       return;
     }
 
     try {
-      // --- UPDATED: Reference the collection, not a specific doc ---
       const collectionRef = ref(database, "performanceReviews");
-
-      // --- UPDATED: Use push() to auto-generate the ID ---
-      await push(collectionRef, newPerformance); // Saves the whole newPerformance state
-
-      alert("Performance review added successfully!");
-      setNewPerformance(initialFormState); 
+      await push(collectionRef, newPerformance);
+      showToast("Performance review added successfully!");
+      setNewPerformance(initialFormState);
       setShowAddForm(false);
     } catch (error) {
       console.error("Error adding document: ", error);
-      alert("Failed to add performance review.");
+      showToast("Failed to add performance review.");
     }
   };
 
-  // --- Handle Update (No changes needed) ---
+  // Handle Update
   const handleUpdatePerformance = async () => {
     if (!selectedPerformance || !selectedPerformance.id) {
-      alert("No performance review selected.");
+      showToast("No performance review selected.");
       return;
     }
 
@@ -110,38 +121,36 @@ function AdminPerformance() {
       const docRef = ref(database, "performanceReviews/" + docId);
       const { id, ...dataToUpdate } = selectedPerformance;
       await update(docRef, dataToUpdate);
-
-      alert("Performance review updated successfully!");
+      showToast("Performance review updated successfully!");
       setShowUpdateForm(false);
       setSelectedPerformance(null);
       setOriginalPerformance(null);
     } catch (error) {
       console.error("Error updating document: ", error);
-      alert("Failed to update performance review.");
+      showToast("Failed to update performance review.");
     }
   };
 
-  // --- Handle Delete (No changes needed) ---
+  // Handle Delete
   const handleDeletePerformance = async () => {
     if (!deleteTargetId) {
-      alert("No performance ID specified for deletion.");
+      showToast("No performance ID specified for deletion.");
       return;
     }
 
     try {
       const docRef = ref(database, "performanceReviews/" + deleteTargetId);
       await remove(docRef);
-
-      alert("Performance review deleted successfully!");
+      showToast("Performance review deleted successfully!");
       setShowDeleteConfirm(false);
       setDeleteTargetId(null);
     } catch (error) {
       console.error("Error deleting document: ", error);
-      alert("Failed to delete performance review.");
+      showToast("Failed to delete performance review.");
     }
   };
 
-  // --- Filtering logic (no change needed) ---
+  // Filtering logic
   const filteredData = performances.filter((item) => {
     return (
       (filterDept === "" || item.department === filterDept) &&
@@ -152,7 +161,6 @@ function AdminPerformance() {
   return (
     <AdminLayout>
       <div className="performance-container">
-        {/* ... (Header and filters are correct) ... */}
         <div className="performance-header">
           <h2>Employee Performance</h2>
           <button
@@ -164,10 +172,7 @@ function AdminPerformance() {
         </div>
 
         <div className="performance-filters">
-          <select
-            value={filterDept}
-            onChange={(e) => setFilterDept(e.target.value)}
-          >
+          <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)}>
             <option value="">All Departments</option>
             <option value="IT">IT</option>
             <option value="HR">HR</option>
@@ -176,36 +181,31 @@ function AdminPerformance() {
           </select>
           <input
             type="text"
-            placeholder="Enter EMP ID"
+            placeholder="Search by Employee ID"
             value={filterEmpId}
             onChange={(e) => setFilterEmpId(e.target.value)}
           />
         </div>
-        
+
         <div className="performance-table-wrapper">
-          <table className="performance-table">
-            <thead>
-              <tr>
-                {/* <th>Feedback ID</th> */}
-                <th>EMP ID</th>
-                <th>Employee Name</th>
-                <th>Department</th>
-                <th>Rating</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+          {loading ? (
+            <div>Loading...</div>
+          ) : filteredData.length > 0 ? (
+            <table className="performance-table">
+              <thead>
                 <tr>
-                  <td colSpan="6" className="no-data-row">
-                    Loading...
-                  </td>
+                  <th>Feedback ID</th>
+                  <th>EMP ID</th>
+                  <th>Employee Name</th>
+                  <th>Department</th>
+                  <th>Rating</th>
+                  <th>Action</th>
                 </tr>
-              ) : filteredData.length > 0 ? (
-                filteredData.map((perf) => (
+              </thead>
+              <tbody>
+                {filteredData.map((perf) => (
                   <tr key={perf.id}>
-                    {/* The ID is now the long unique key from push() */}
-                    {/* <td title={perf.id}>{perf.id.substring(0, 8)}...</td>  */}
+                    <td>{perf.id.substring(0, 8)}...</td>
                     <td>{perf.empId}</td>
                     <td>{perf.name}</td>
                     <td>{perf.department}</td>
@@ -214,7 +214,7 @@ function AdminPerformance() {
                         <StarRoundedIcon
                           key={i}
                           style={{
-                            color: i < perf.rating ? "#f1c40f" : "#ccc",
+                            color: perf.rating >= i + 1 ? "#f1c40f" : "#ccc",
                             fontSize: "20px",
                           }}
                         />
@@ -229,9 +229,9 @@ function AdminPerformance() {
                           setShowUpdateForm(true);
                         }}
                       >
-                        <IosShareRoundedIcon /> Update
+                        <IosShareRoundedIcon />
+                        Update
                       </button>
-
                       <button
                         className="action-btn delete"
                         onClick={() => {
@@ -239,51 +239,41 @@ function AdminPerformance() {
                           setShowDeleteConfirm(true);
                         }}
                       >
-                        <DeleteRoundedIcon /> Delete
+                        <DeleteRoundedIcon />
+                        Delete
                       </button>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="no-data-row">
-                    No matching records found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="no-data-row">No matching records found.</div>
+          )}
         </div>
-      </div>
 
-      {/* --- ADD MODAL --- */}
-      {showAddForm && (
-        <div className="performance-popup-overlay">
-          <div className="performance-popup-content">
-            <button
-              className="popup-close"
-              onClick={() => {
-                setShowAddForm(false);
-                setNewPerformance(initialFormState); 
-              }}
-            >
-              &times;
-            </button>
-            <h3>Add New Performance</h3>
-            <div className="popup-form">
-              
-              {/* --- UPDATED: Removed Feedback ID input field --- */}
-              
+        {/* ADD MODAL */}
+        {showAddForm && (
+          <div className="performance-popup-overlay">
+            <div className="performance-popup-content">
+              <button
+                className="popup-close"
+                onClick={() => {
+                  setShowAddForm(false);
+                  setNewPerformance(initialFormState);
+                }}
+              >
+                ×
+              </button>
+              <h3>Add New Performance</h3>
+
               <div className="input-inline">
                 <label>Employee ID*</label>
                 <input
                   type="text"
                   value={newPerformance.empId}
                   onChange={(e) =>
-                    setNewPerformance({
-                      ...newPerformance,
-                      empId: e.target.value,
-                    })
+                    setNewPerformance({ ...newPerformance, empId: e.target.value })
                   }
                 />
               </div>
@@ -294,10 +284,7 @@ function AdminPerformance() {
                   type="text"
                   value={newPerformance.name}
                   onChange={(e) =>
-                    setNewPerformance({
-                      ...newPerformance,
-                      name: e.target.value,
-                    })
+                    setNewPerformance({ ...newPerformance, name: e.target.value })
                   }
                 />
               </div>
@@ -307,10 +294,7 @@ function AdminPerformance() {
                 <select
                   value={newPerformance.department}
                   onChange={(e) =>
-                    setNewPerformance({
-                      ...newPerformance,
-                      department: e.target.value,
-                    })
+                    setNewPerformance({ ...newPerformance, department: e.target.value })
                   }
                 >
                   <option value="">Select Department</option>
@@ -328,10 +312,7 @@ function AdminPerformance() {
                   type="date"
                   value={newPerformance.date}
                   onChange={(e) =>
-                    setNewPerformance({
-                      ...newPerformance,
-                      date: e.target.value,
-                    })
+                    setNewPerformance({ ...newPerformance, date: e.target.value })
                   }
                 />
               </div>
@@ -342,10 +323,7 @@ function AdminPerformance() {
                   type="text"
                   value={newPerformance.score}
                   onChange={(e) =>
-                    setNewPerformance({
-                      ...newPerformance,
-                      score: e.target.value,
-                    })
+                    setNewPerformance({ ...newPerformance, score: e.target.value })
                   }
                 />
               </div>
@@ -355,10 +333,7 @@ function AdminPerformance() {
                 <select
                   value={newPerformance.engagement}
                   onChange={(e) =>
-                    setNewPerformance({
-                      ...newPerformance,
-                      engagement: e.target.value,
-                    })
+                    setNewPerformance({ ...newPerformance, engagement: e.target.value })
                   }
                 >
                   <option value="">Select</option>
@@ -371,67 +346,56 @@ function AdminPerformance() {
               <div className="input-inline">
                 <label>Comments*</label>
                 <textarea
-                  rows="3"
                   value={newPerformance.comments}
                   onChange={(e) =>
-                    setNewPerformance({
-                      ...newPerformance,
-                      comments: e.target.value,
-                    })
+                    setNewPerformance({ ...newPerformance, comments: e.target.value })
                   }
-                ></textarea>
+                />
               </div>
 
-              <label>Ratings*</label>
-              <div className="star-select">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <StarRoundedIcon
-                    key={i}
-                    onClick={() =>
-                      setNewPerformance({ ...newPerformance, rating: i + 1 })
-                    }
-                    style={{
-                      color:
-                        newPerformance.rating >= i + 1 ? "#f1c40f" : "#ccc",
-                      fontSize: "24px",
-                      cursor: "pointer",
-                    }}
-                  />
-                ))}
+              <div className="input-inline">
+                <label>Ratings*</label>
+                <div className="star-select">
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <StarRoundedIcon
+                      key={i}
+                      onClick={() =>
+                        setNewPerformance({ ...newPerformance, rating: i + 1 })
+                      }
+                      style={{
+                        color: newPerformance.rating >= i + 1 ? "#f1c40f" : "#ccc",
+                        fontSize: "24px",
+                        cursor: "pointer",
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
-              
-              <button className="popup-ok-btn" onClick={handleAddPerformance}>
-                Add
-              </button>
+
+              <div className="popup-btn-container">
+                <button className="popup-ok-btn" onClick={handleAddPerformance}>
+                  Add
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* --- UPDATE MODAL --- */}
-      {showUpdateForm && selectedPerformance && (
-        <div className="performance-popup-overlay">
-          <div className="performance-popup-content">
-            <button
-              className="popup-close"
-              onClick={() => {
-                setShowUpdateForm(false);
-                setSelectedPerformance(null);
-                setOriginalPerformance(null);
-              }}
-            >
-              &times;
-            </button>
-            <h3>Update Performance</h3>
-            <div className="popup-form">
-              {/* <div className="input-inline">
-                <label>Feedback ID*</label>
-                <input
-                  type="text"
-                  value={selectedPerformance.id}
-                  disabled 
-                />
-              </div> */}
+        {/* UPDATE MODAL */}
+        {showUpdateForm && selectedPerformance && (
+          <div className="performance-popup-overlay">
+            <div className="performance-popup-content">
+              <button
+                className="popup-close"
+                onClick={() => {
+                  setShowUpdateForm(false);
+                  setSelectedPerformance(null);
+                  setOriginalPerformance(null);
+                }}
+              >
+                ×
+              </button>
+              <h3>Update Performance</h3>
 
               <div className="input-inline">
                 <label>Employee ID*</label>
@@ -460,8 +424,8 @@ function AdminPerformance() {
                   }
                 />
               </div>
-              
-               <div className="input-inline">
+
+              <div className="input-inline">
                 <label>Department*</label>
                 <select
                   value={selectedPerformance.department}
@@ -485,7 +449,7 @@ function AdminPerformance() {
                 <label>Date*</label>
                 <input
                   type="date"
-                  value={selectedPerformance.date || ""}
+                  value={selectedPerformance.date}
                   onChange={(e) =>
                     setSelectedPerformance({
                       ...selectedPerformance,
@@ -499,7 +463,7 @@ function AdminPerformance() {
                 <label>Score*</label>
                 <input
                   type="text"
-                  value={selectedPerformance.score || ""}
+                  value={selectedPerformance.score}
                   onChange={(e) =>
                     setSelectedPerformance({
                       ...selectedPerformance,
@@ -512,7 +476,7 @@ function AdminPerformance() {
               <div className="input-inline">
                 <label>Engagement Level*</label>
                 <select
-                  value={selectedPerformance.engagement || ""}
+                  value={selectedPerformance.engagement}
                   onChange={(e) =>
                     setSelectedPerformance({
                       ...selectedPerformance,
@@ -530,23 +494,19 @@ function AdminPerformance() {
               <div className="input-inline">
                 <label>Comments*</label>
                 <textarea
-                  rows="3"
-                  value={selectedPerformance.comments || ""}
+                  value={selectedPerformance.comments}
                   onChange={(e) =>
                     setSelectedPerformance({
                       ...selectedPerformance,
                       comments: e.target.value,
                     })
                   }
-                ></textarea>
+                />
               </div>
-              
-              <div
-                className="input-inline"
-                style={{ display: "flex", alignItems: "center", gap: "10px" }}
-              >
-                <label style={{ minWidth: "70px" }}>Ratings*</label>
-                <div className="star-select" style={{ display: "flex" }}>
+
+              <div className="input-inline">
+                <label>Ratings*</label>
+                <div className="star-select">
                   {Array.from({ length: 5 }, (_, i) => (
                     <StarRoundedIcon
                       key={i}
@@ -557,10 +517,7 @@ function AdminPerformance() {
                         })
                       }
                       style={{
-                        color:
-                          selectedPerformance.rating >= i + 1
-                            ? "#f1c40f"
-                            : "#ccc",
+                        color: selectedPerformance.rating >= i + 1 ? "#f1c40f" : "#ccc",
                         fontSize: "24px",
                         cursor: "pointer",
                       }}
@@ -580,54 +537,48 @@ function AdminPerformance() {
                 >
                   Cancel
                 </button>
-
                 {JSON.stringify(selectedPerformance) !==
                   JSON.stringify(originalPerformance) && (
-                  <button
-                    className="popup-ok-btn"
-                    onClick={handleUpdatePerformance} 
-                    style={{ marginLeft: "10px" }}
-                  >
+                  <button className="popup-ok-btn" onClick={handleUpdatePerformance}>
                     Update
                   </button>
                 )}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* --- DELETE MODAL --- */}
-      {showDeleteConfirm && (
-        <div className="performance-popup-overlay">
-          <div className="performance-popup-content">
-            <h3>Confirm Delete</h3>
-            <p>
-              Are you sure you want to delete performance ID{" "}
-              <strong>{deleteTargetId}</strong>?
-            </p>
-
-            <div className="popup-btn-container">
-              <button
-                className="popup-ok-btn"
-                onClick={handleDeletePerformance} 
-              >
-                Yes, Delete
-              </button>
-              <button
-                className="popup-ok-btn"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeleteTargetId(null);
-                }}
-                style={{ marginLeft: "10px" }}
-              >
-                Cancel
-              </button>
+        {/* DELETE MODAL */}
+        {showDeleteConfirm && (
+          <div className="performance-popup-overlay">
+            <div className="performance-popup-content">
+              <h3>Confirm Delete</h3>
+              <p>
+                Are you sure you want to delete performance ID{" "}
+                <strong>{deleteTargetId}</strong>?
+              </p>
+              <div className="popup-btn-container">
+                <button className="popup-ok-btn" onClick={handleDeletePerformance}>
+                  Yes, Delete
+                </button>
+                <button
+                  className="popup-ok-btn"
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeleteTargetId(null);
+                  }}
+                  style={{ marginLeft: "10px" }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* TOAST NOTIFICATION */}
+        {toast.show && <Toast message={toast.message} onClose={hideToast} />}
+      </div>
     </AdminLayout>
   );
 }
