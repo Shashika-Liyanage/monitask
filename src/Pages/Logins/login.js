@@ -1,48 +1,59 @@
 import React, { useState } from "react";
-import "./Login.css"; // Import the CSS file
+import "./Login.css"; // Your CSS for login
 import { Eye, EyeOff } from "lucide-react";
-import { auth } from "../../Service/FirebaseConfig";
+import { auth } from "../../Service/FirebaseConfig"; 
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      console.log("Logged in user:", userCredential.user);
-       toast.success("Logged in successfully!");
-      navigate("/dashboard");
-   
-      // Redirect or show dashboard here
-    } catch (err) {
-      setError(err.message);
-      toast.error(err.message);
+
+ const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    // Firebase login
+    await signInWithEmailAndPassword(auth, email, password);
+
+    // Success toast
+    toast.success("Login Successful!");
+
+    // Redirect after short delay
+    setTimeout(() => {
+      navigate("/employeeDash");
+    }, 500);
+
+  } catch (err) {
+    console.error(err);
+
+    // Show friendly error messages
+    if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+      toast.error("Invalid username or password");
+    } else if (err.code === "auth/invalid-email") {
+      toast.error("Invalid email format");
+    } else {
+      toast.error("Login failed. Invalid User Name or Password");
     }
-  };
+  }
+};
+
 
   return (
     <div className="login-container">
-        <Toaster />
-      <form onSubmit={handleSubmit} className="login-form">
+      <Toaster position="top-center" reverseOrder={false} />
+      <form onSubmit={handleLogin} className="login-form">
         <h2>Login</h2>
-        {error && <div className="error">{error}</div>}
 
         <div className="form-group">
-          <label>Username</label>
+          <label>Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email"
             required
           />
         </div>
@@ -53,15 +64,16 @@ function Login() {
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
             required
             className="pr-10"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2 top-9 text-gray-500"
+            className="toggle-password-btn"
           >
-            {showPassword ? <EyeOff size={10} /> : <Eye size={10} />}
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
 
