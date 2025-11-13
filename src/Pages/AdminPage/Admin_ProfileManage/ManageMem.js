@@ -221,14 +221,15 @@ function MemberAdd() {
               </div>
 
               <div className="admin-form-row">
-                <label>Password</label>
-                <input
-                  required
-                  type="password"
-                  placeholder="Click to set password"
-                  readOnly
-                  onClick={handlePasswordClick}
-                  value={newPassword ? "********" : ""}
+                <label>Password<span>*</span></label>
+                <input required
+                  type="password"            
+                />
+              </div>
+                   <div className="admin-form-row">
+                <label>Re-Type Password<span>*</span></label>
+                <input required
+                  type="password"            
                 />
               </div>
             </fieldset>
