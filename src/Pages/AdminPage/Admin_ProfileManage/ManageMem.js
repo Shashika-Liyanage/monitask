@@ -176,12 +176,15 @@ if (!inputFullName ||
               </div>
 
               <div className="admin-form-row">
-                <label>Password</label>
+                <label>Password<span>*</span></label>
                 <input required
-                  type="password"
-                  placeholder="Click to change"
-                  readOnly
-                  onClick={handlePasswordClick}
+                  type="password"            
+                />
+              </div>
+                   <div className="admin-form-row">
+                <label>Re-Type Password<span>*</span></label>
+                <input required
+                  type="password"            
                 />
               </div>
             </fieldset>

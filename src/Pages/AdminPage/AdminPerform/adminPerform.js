@@ -1,16 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AdminLayout from "../../../Layout/Admin_Layout/AdminL";
 import "./adminPerform.css";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 
+// --- Firebase Imports ---
+import {
+  ref,
+  set,
+  update,
+  remove,
+  onValue,
+  push, // --- ADDED: Import push for auto-IDs ---
+} from "firebase/database";
+import { database } from "../../../Service/FirebaseConfig";
+
 function AdminPerformance() {
   const [filterDept, setFilterDept] = useState("");
   const [filterEmpId, setFilterEmpId] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newPerformance, setNewPerformance] = useState({
-    feedbackId: "",
+
+  // --- UPDATED: Removed feedbackId ---
+  const initialFormState = {
     empId: "",
     name: "",
     department: "",
@@ -19,37 +31,117 @@ function AdminPerformance() {
     score: "",
     engagement: "",
     comments: "",
-  });
+  };
+
+  const [newPerformance, setNewPerformance] = useState(initialFormState);
+
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [selectedPerformance, setSelectedPerformance] = useState(null);
   const [originalPerformance, setOriginalPerformance] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
-  const [performances] = useState([
-    {
-      id: "PERF001",
-      empId: "EMP001",
-      name: "John Doe",
-      department: "IT",
-      rating: 4,
-    },
-    {
-      id: "PERF002",
-      empId: "EMP002",
-      name: "Jane Smith",
-      department: "HR",
-      rating: 5,
-    },
-    {
-      id: "PERF003",
-      empId: "EMP003",
-      name: "Ann Perera",
-      department: "Finance",
-      rating: 3,
-    },
-  ]);
+  const [performances, setPerformances] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // --- Fetch data (No changes needed) ---
+  useEffect(() => {
+    setLoading(true);
+    const collectionRef = ref(database, "performanceReviews");
+
+    const unsubscribe = onValue(
+      collectionRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        const reviewsList = [];
+        
+        if (data) {
+          for (let id in data) {
+            reviewsList.push({ id, ...data[id] });
+          }
+        }
+        
+        setPerformances(reviewsList);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching performance data: ", error);
+        alert("Could not fetch performance data.");
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  // --- UPDATED: 2. Handle Add New Performance ---
+  const handleAddPerformance = async () => {
+    // --- UPDATED: Removed feedbackId from validation ---
+    if (!newPerformance.empId || !newPerformance.name) {
+      alert("Please fill in Employee ID and Name.");
+      return;
+    }
+
+    try {
+      // --- UPDATED: Reference the collection, not a specific doc ---
+      const collectionRef = ref(database, "performanceReviews");
+
+      // --- UPDATED: Use push() to auto-generate the ID ---
+      await push(collectionRef, newPerformance); // Saves the whole newPerformance state
+
+      alert("Performance review added successfully!");
+      setNewPerformance(initialFormState); 
+      setShowAddForm(false);
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      alert("Failed to add performance review.");
+    }
+  };
+
+  // --- Handle Update (No changes needed) ---
+  const handleUpdatePerformance = async () => {
+    if (!selectedPerformance || !selectedPerformance.id) {
+      alert("No performance review selected.");
+      return;
+    }
+
+    try {
+      const docId = selectedPerformance.id;
+      const docRef = ref(database, "performanceReviews/" + docId);
+      const { id, ...dataToUpdate } = selectedPerformance;
+      await update(docRef, dataToUpdate);
+
+      alert("Performance review updated successfully!");
+      setShowUpdateForm(false);
+      setSelectedPerformance(null);
+      setOriginalPerformance(null);
+    } catch (error) {
+      console.error("Error updating document: ", error);
+      alert("Failed to update performance review.");
+    }
+  };
+
+  // --- Handle Delete (No changes needed) ---
+  const handleDeletePerformance = async () => {
+    if (!deleteTargetId) {
+      alert("No performance ID specified for deletion.");
+      return;
+    }
+
+    try {
+      const docRef = ref(database, "performanceReviews/" + deleteTargetId);
+      await remove(docRef);
+
+      alert("Performance review deleted successfully!");
+      setShowDeleteConfirm(false);
+      setDeleteTargetId(null);
+    } catch (error) {
+      console.error("Error deleting document: ", error);
+      alert("Failed to delete performance review.");
+    }
+  };
+
+  // --- Filtering logic (no change needed) ---
   const filteredData = performances.filter((item) => {
     return (
       (filterDept === "" || item.department === filterDept) &&
@@ -60,6 +152,7 @@ function AdminPerformance() {
   return (
     <AdminLayout>
       <div className="performance-container">
+        {/* ... (Header and filters are correct) ... */}
         <div className="performance-header">
           <h2>Employee Performance</h2>
           <button
@@ -88,12 +181,12 @@ function AdminPerformance() {
             onChange={(e) => setFilterEmpId(e.target.value)}
           />
         </div>
-
+        
         <div className="performance-table-wrapper">
           <table className="performance-table">
             <thead>
               <tr>
-                <th>Feedback ID</th>
+                {/* <th>Feedback ID</th> */}
                 <th>EMP ID</th>
                 <th>Employee Name</th>
                 <th>Department</th>
@@ -102,18 +195,28 @@ function AdminPerformance() {
               </tr>
             </thead>
             <tbody>
-              {filteredData.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="no-data-row">
+                    Loading...
+                  </td>
+                </tr>
+              ) : filteredData.length > 0 ? (
                 filteredData.map((perf) => (
                   <tr key={perf.id}>
-                    <td>{perf.id}</td>
+                    {/* The ID is now the long unique key from push() */}
+                    {/* <td title={perf.id}>{perf.id.substring(0, 8)}...</td>  */}
                     <td>{perf.empId}</td>
                     <td>{perf.name}</td>
                     <td>{perf.department}</td>
                     <td>
-                      {Array.from({ length: perf.rating }, (_, i) => (
+                      {Array.from({ length: 5 }, (_, i) => (
                         <StarRoundedIcon
                           key={i}
-                          style={{ color: "#f1c40f", fontSize: "20px" }}
+                          style={{
+                            color: i < perf.rating ? "#f1c40f" : "#ccc",
+                            fontSize: "20px",
+                          }}
                         />
                       ))}
                     </td>
@@ -122,7 +225,7 @@ function AdminPerformance() {
                         className="action-btn update"
                         onClick={() => {
                           setSelectedPerformance(perf);
-                          setOriginalPerformance(perf); // store original for comparison
+                          setOriginalPerformance(perf);
                           setShowUpdateForm(true);
                         }}
                       >
@@ -153,32 +256,24 @@ function AdminPerformance() {
         </div>
       </div>
 
+      {/* --- ADD MODAL --- */}
       {showAddForm && (
         <div className="performance-popup-overlay">
           <div className="performance-popup-content">
             <button
               className="popup-close"
-              onClick={() => setShowAddForm(false)}
+              onClick={() => {
+                setShowAddForm(false);
+                setNewPerformance(initialFormState); 
+              }}
             >
               &times;
             </button>
             <h3>Add New Performance</h3>
-
             <div className="popup-form">
-              <div className="input-inline">
-                <label>Feedback ID*</label>
-                <input
-                  type="text"
-                  value={newPerformance.feedbackId}
-                  onChange={(e) =>
-                    setNewPerformance({
-                      ...newPerformance,
-                      feedbackId: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
+              
+              {/* --- UPDATED: Removed Feedback ID input field --- */}
+              
               <div className="input-inline">
                 <label>Employee ID*</label>
                 <input
@@ -224,7 +319,6 @@ function AdminPerformance() {
                   <option value="IT">IT</option>
                   <option value="Sales">Sales</option>
                   <option value="Marketing">Marketing</option>
-                  {/* Add more departments as needed */}
                 </select>
               </div>
 
@@ -305,11 +399,8 @@ function AdminPerformance() {
                   />
                 ))}
               </div>
-
-              <button
-                className="popup-ok-btn"
-                onClick={() => setShowAddForm(false)}
-              >
+              
+              <button className="popup-ok-btn" onClick={handleAddPerformance}>
                 Add
               </button>
             </div>
@@ -317,31 +408,30 @@ function AdminPerformance() {
         </div>
       )}
 
+      {/* --- UPDATE MODAL --- */}
       {showUpdateForm && selectedPerformance && (
         <div className="performance-popup-overlay">
           <div className="performance-popup-content">
             <button
               className="popup-close"
-              onClick={() => setShowUpdateForm(false)}
+              onClick={() => {
+                setShowUpdateForm(false);
+                setSelectedPerformance(null);
+                setOriginalPerformance(null);
+              }}
             >
               &times;
             </button>
             <h3>Update Performance</h3>
-
             <div className="popup-form">
-              <div className="input-inline">
+              {/* <div className="input-inline">
                 <label>Feedback ID*</label>
                 <input
                   type="text"
                   value={selectedPerformance.id}
-                  onChange={(e) =>
-                    setSelectedPerformance({
-                      ...selectedPerformance,
-                      id: e.target.value,
-                    })
-                  }
+                  disabled 
                 />
-              </div>
+              </div> */}
 
               <div className="input-inline">
                 <label>Employee ID*</label>
@@ -370,8 +460,8 @@ function AdminPerformance() {
                   }
                 />
               </div>
-
-              <div className="input-inline">
+              
+               <div className="input-inline">
                 <label>Department*</label>
                 <select
                   value={selectedPerformance.department}
@@ -450,7 +540,7 @@ function AdminPerformance() {
                   }
                 ></textarea>
               </div>
-
+              
               <div
                 className="input-inline"
                 style={{ display: "flex", alignItems: "center", gap: "10px" }}
@@ -482,7 +572,11 @@ function AdminPerformance() {
               <div className="popup-btn-container">
                 <button
                   className="popup-ok-btn"
-                  onClick={() => setShowUpdateForm(false)}
+                  onClick={() => {
+                    setShowUpdateForm(false);
+                    setSelectedPerformance(null);
+                    setOriginalPerformance(null);
+                  }}
                 >
                   Cancel
                 </button>
@@ -491,11 +585,7 @@ function AdminPerformance() {
                   JSON.stringify(originalPerformance) && (
                   <button
                     className="popup-ok-btn"
-                    onClick={() => {
-                      // UPDATE LOGIC GOES HERE
-                      console.log("Updated Performance:", selectedPerformance);
-                      setShowUpdateForm(false);
-                    }}
+                    onClick={handleUpdatePerformance} 
                     style={{ marginLeft: "10px" }}
                   >
                     Update
@@ -506,6 +596,8 @@ function AdminPerformance() {
           </div>
         </div>
       )}
+
+      {/* --- DELETE MODAL --- */}
       {showDeleteConfirm && (
         <div className="performance-popup-overlay">
           <div className="performance-popup-content">
@@ -518,12 +610,7 @@ function AdminPerformance() {
             <div className="popup-btn-container">
               <button
                 className="popup-ok-btn"
-                onClick={() => {
-                  // Here you can implement the actual delete logic
-                  console.log("Deleting ID:", deleteTargetId);
-                  setShowDeleteConfirm(false);
-                  setDeleteTargetId(null);
-                }}
+                onClick={handleDeletePerformance} 
               >
                 Yes, Delete
               </button>

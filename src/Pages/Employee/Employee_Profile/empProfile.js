@@ -76,7 +76,7 @@ function EmployeeProfile() {
               </div>
 
               <div className="form-row">
-                <label>Tel<span>*</span></label>
+                <label>Telephone Number<span>*</span></label>
                 <input type="tel" />
               </div>
 
@@ -86,11 +86,17 @@ function EmployeeProfile() {
               </div>
 
                <div className="form-row">
-                <label>Change Password</label>
+                <label>Add New Password</label>
                 <input
                   type="password"
-                  placeholder="Click to change"
-                  readOnly
+              
+                  onClick={handlePasswordClick}
+                />
+              </div>
+                      <div className="form-row">
+                <label>Type Again New Password</label>
+                <input
+                  type="password"
                   onClick={handlePasswordClick}
                 />
               </div>
@@ -124,32 +130,8 @@ function EmployeeProfile() {
             <button type="submit">OK</button>
           </div>
         </form>
-          {showPasswordModal && (
-          <div className="modal-overlay">
-            <div className="modal-box">
-              <h3>Change Password</h3>
 
-              <label>New Password<span>*</span></label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-
-              <label>Confirm Password<span>*</span></label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-
-              <div className="modal-actions">
-                <button onClick={handlePasswordSubmit}>OK</button>
-                <button onClick={() => setShowPasswordModal(false)}>Cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
+         
       </div>
     </EmployeeLayout>
   );
