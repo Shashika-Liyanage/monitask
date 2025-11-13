@@ -1,9 +1,12 @@
+/* adminLeave.css - updated UI to match design screenshots */
+
+/* Page container */
 .leave-req-container {
-  padding: 20px;
+  padding: 24px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #222;
-  background: #fff;
-  min-height: 80vh;
+  background: #f7f7f8; /* subtle page bg */
+  min-height: 82vh;
 }
 
 /* Topbar with title and button */
@@ -11,194 +14,503 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
+.leave-req-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+  color: #111;
+}
 
+/* Request button (pale yellow pill with black border like screenshot) */
+.leave-req-btn-request {
+  background-color: #f7e7ad; /* pale yellow */
+  color: #000;
+  border: 2px solid #2e2e2e;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.06);
+}
+.leave-req-btn-request:hover { transform: translateY(-1px); }
 
-
-
-
-/* Filters container - 3 columns */
+/* Filters row */
 .leave-req-filters {
   display: flex;
-  gap: 16px;
-  margin-bottom: 25px;
+  gap: 14px;
+  margin-bottom: 18px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .leave-req-filters select,
 .leave-req-filters input[type="text"],
 .leave-req-filters input[type="date"] {
-  flex: 1 1 0;
-  padding: 12px 15px;
-  border: 1.5px solid #ccc;
+  padding: 12px 14px;
+  border: 1.2px solid #ddd;
   border-radius: 10px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  font-size: 0.95rem;
+  min-width: 160px;
+  background: #fff;
+  box-shadow: none;
 }
-
 .leave-req-filters select:focus,
-.leave-req-filters input[type="text"]:focus,
-.leave-req-filters input[type="date"]:focus {
+.leave-req-filters input:focus {
   outline: none;
   border-color: #0b3d91;
-  box-shadow: 0 0 8px rgba(11, 61, 145, 0.3);
+  box-shadow: 0 0 8px rgba(11,61,145,0.12);
 }
 
-/* Table styles */
+/* Table wrapper */
 .leave-req-table-wrapper {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.04);
+  padding: 8px;
   overflow-x: auto;
 }
 
+/* Table */
 .leave-req-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px;
-}
-
-.leave-req-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 0;
-  color: #000000; /* black */
-}
-
-.leave-req-btn-request {
-  background-color: #FAEAB1; /* pale yellow */
-  color: #000000; /* black text for contrast */
-  border: 2px solid #000000; /* black border */
-  padding: 10px 22px;
-  border-radius: 12px; /* you can increase for a softer curve */
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  white-space: nowrap;
-}
-
-.leave-req-btn-request:hover {
-  background-color: #f5e8a3; /* slightly darker yellow on hover */
+  min-width: 720px;
+  font-size: 0.95rem;
 }
 
 .leave-req-table thead th {
-  background-color: #f2dec6; /* soft warm tan */
-  color: #000000; /* black text */
+  background-color: #e9d4bf; /* warm tan header */
+  color: #111;
+  font-weight: 700;
+  text-align: left;
+  padding: 14px 16px;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
 }
-
 
 .leave-req-table th,
 .leave-req-table td {
-  text-align: left;
-  padding: 12px 15px;
-  border-bottom: 1px solid #ddd;
-  font-size: 1rem;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
 }
 
+/* Clickable rows (looks like screenshot) */
+.leave-req-table tbody tr {
+  transition: background 150ms ease, transform 80ms ease;
+}
 .leave-req-table tbody tr:hover {
-  background-color: #f1f6fb;
-  cursor: default;
+  background-color: #fbfbfd;
+  cursor: pointer;
+  transform: translateY(-1px);
+}
+.leave-req-table tbody td:first-child {
+  width: 90px;
+  color: #6b6b6b;
+  font-weight: 600;
 }
 
-/* No data row style */
+/* No data row */
 .leave-req-no-data {
   text-align: center;
-  padding: 20px;
-  color: #777;
+  padding: 22px;
+  color: #888;
   font-style: italic;
 }
 
-/* Responsive for mobile */
+/* Modal backdrop - dim with subtle blur */
+.leave-popup-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 20, 20, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 9999;
+  padding: 24px;
+}
+
+/* Modal card that matches screenshot (rounded, soft shadow) */
+.leave-popup-content {
+  width: 540px;
+  max-width: calc(100% - 48px);
+  background: #fff;
+  padding: 22px 26px;
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(9, 30, 66, 0.12);
+  position: relative;
+  animation: popIn 220ms cubic-bezier(.2,.9,.2,1);
+  color: #222;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Larger modal for more content if needed */
+.leave-popup-content.wide { 
+  width: 680px;
+  max-height: 85vh;
+}
+
+/* close button style */
+.leave-popup-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 150ms ease;
+}
+
+.leave-popup-close:hover {
+  background: #f5f5f5;
+  transform: scale(1.05);
+}
+
+/* Modal header */
+.leave-popup-content h3 {
+  margin: 6px 0 16px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  padding-right: 40px;
+}
+
+/* Labels and info list */
+.leave-popup-detail {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px 12px;
+  margin-bottom: 14px;
+}
+
+.leave-popup-detail p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #444;
+}
+.leave-popup-detail p strong {
+  display: inline-block;
+  width: 110px; /* align values */
+  font-weight: 700;
+  color: #222;
+}
+
+/* Description styling */
+.leave-popup-content .description {
+  margin-top: 8px;
+  background: #fafafa;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  color: #444;
+  font-size: 14px;
+}
+
+/* Decision button row - matches screenshot: green approve and red reject with outline */
+.leave-action-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  align-items: center;
+}
+
+.btn-approve,
+.btn-reject,
+.btn-cancel {
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 150ms ease;
+}
+
+/* Approve = white fill with green outline accent in screenshot */
+.btn-approve {
+  background: #e9fff0;
+  color: #1b7a3a;
+  border-color: #1b7a3a;
+  box-shadow: 0 2px 0 rgba(27,122,58,0.08);
+}
+
+.btn-approve:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(27,122,58,0.15);
+}
+
+/* Reject = white fill with red outline */
+.btn-reject {
+  background: #fff1f3;
+  color: #b82b3b;
+  border-color: #b82b3b;
+}
+
+.btn-reject:hover {
+  background: #ffe5e8;
+}
+
+/* Confirm reject (filled) - red filled look if you prefer */
+.btn-reject.confirm {
+  background: #b82b3b;
+  color: #fff;
+  border-color: transparent;
+}
+
+.btn-reject.confirm:hover {
+  background: #a02533;
+}
+
+/* Cancel button */
+.btn-cancel {
+  background: #f4f4f6;
+  color: #333;
+  border-color: #ddd;
+}
+
+.btn-cancel:hover {
+  background: #e8e8ea;
+}
+
+/* Rejection textarea (when reject selected) */
+.rejection-box {
+  margin-top: 12px;
+}
+
+.rejection-box label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #222;
+}
+
+.rejection-box textarea {
+  width: 100%;
+  min-height: 86px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e1e1e6;
+  font-size: 14px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.rejection-box textarea:focus {
+  outline: none;
+  border-color: #0b3d91;
+  box-shadow: 0 0 8px rgba(11,61,145,0.12);
+}
+
+/* ===== NEW: FORM STYLES FOR REQUEST LEAVE MODAL ===== */
+
+/* Form input fields inside modal */
+.leave-popup-content.wide input[type="text"],
+.leave-popup-content.wide input[type="date"],
+.leave-popup-content.wide select,
+.leave-popup-content.wide textarea {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border: 1.2px solid #ddd;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #fff;
+  color: #333;
+  transition: all 150ms ease;
+  box-sizing: border-box;
+}
+
+.leave-popup-content.wide input[type="text"]:focus,
+.leave-popup-content.wide input[type="date"]:focus,
+.leave-popup-content.wide select:focus,
+.leave-popup-content.wide textarea:focus {
+  outline: none;
+  border-color: #0b3d91;
+  box-shadow: 0 0 8px rgba(11,61,145,0.12);
+}
+
+.leave-popup-content.wide input[type="text"]::placeholder,
+.leave-popup-content.wide textarea::placeholder {
+  color: #999;
+}
+
+/* Select dropdown styling */
+.leave-popup-content.wide select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+}
+
+/* Textarea specific */
+.leave-popup-content.wide textarea {
+  min-height: 90px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* Button container in form */
+.leave-popup-content.wide > div[style*="display: flex"] {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+/* Date inputs */
+.leave-popup-content.wide input[type="date"] {
+  cursor: pointer;
+}
+
+/* small subtle animation */
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-8px) scale(.995) }
+  to   { opacity: 1; transform: translateY(0) scale(1) }
+}
+
+/* Smooth scrollbar for modal */
+.leave-popup-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.leave-popup-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.leave-popup-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.leave-popup-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
+  .leave-req-container {
+    padding: 16px;
+  }
+
+  .leave-req-title { 
+    font-size: 22px; 
+  }
+
+  .leave-req-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .leave-req-btn-request {
+    width: 100%;
+    justify-content: center;
+  }
+
   .leave-req-filters {
     flex-direction: column;
   }
 
   .leave-req-filters select,
-  .leave-req-filters input[type="text"],
-  .leave-req-filters input[type="date"] {
-    flex: 1 1 auto;
+  .leave-req-filters input {
     width: 100%;
-  }
-
-  .leave-req-topbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .leave-req-btn-request {
-    margin-top: 12px;
-    width: 100%;
-    text-align: center;
-  }
-
-  .leave-req-table {
     min-width: 100%;
   }
+
+  .leave-popup-content,
+  .leave-popup-content.wide { 
+    width: 100%; 
+    max-width: 100%;
+    padding: 20px 18px; 
+    border-radius: 12px;
+    max-height: 92vh;
+  }
+
+  .leave-popup-close { 
+    right: 12px; 
+    top: 12px; 
+  }
+
+  .leave-popup-content h3 {
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+
+  .leave-action-row {
+    flex-direction: column;
+  }
+
+  .btn-approve,
+  .btn-reject,
+  .btn-cancel {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .leave-popup-content.wide > div[style*="display: flex"] {
+    flex-direction: column-reverse;
+  }
+
+  .leave-popup-content.wide .leave-req-btn-request,
+  .leave-popup-content.wide .btn-cancel {
+    width: 100%;
+  }
 }
-.leave-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+
+@media (max-width: 480px) {
+  .leave-req-title { 
+    font-size: 20px; 
+  }
+
+  .leave-popup-content,
+  .leave-popup-content.wide {
+    padding: 18px 14px;
+  }
+
+  .leave-popup-content h3 {
+    font-size: 16px;
+  }
+
+  .leave-popup-close {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+
+  .leave-popup-content.wide input,
+  .leave-popup-content.wide select,
+  .leave-popup-content.wide textarea {
+    padding: 11px 12px;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+}
+
+/* Loading state */
+.loading-state {
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 999;
-}
-
-.leave-popup-content {
-  background: white;
-  padding: 25px 30px;
-  border-radius: 16px;
-  max-width: 400px;
-  width: 90%;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-  position: relative;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-.leave-popup-close {
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.leave-popup-content h3 {
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.leave-popup-content p {
-  margin: 8px 0;
-  font-size: 15px;
-  color: #444;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.leave-popup-content input,
-.leave-popup-content select,
-.leave-popup-content textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 1.5px solid #ccc;
-  font-size: 1rem;
-}
-
-.leave-popup-content input:focus,
-.leave-popup-content select:focus,
-.leave-popup-content textarea:focus {
-  border-color: #007bff;
-  outline: none;
+  justify-content: center;
+  min-height: 60vh;
+  font-size: 18px;
+  color: #666;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }

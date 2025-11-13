@@ -8,6 +8,9 @@ import "./adminProfileM.css";
 import { useNavigate, useParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import { getDatabase, ref, get, remove, set } from "firebase/database";
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import app from "../../../Service/FirebaseConfig";
+
 const AdminProfileManage = () => {
   const { firebaseId } = useParams();
   const fileInputRef = useRef(null);
@@ -20,92 +23,111 @@ const AdminProfileManage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
 
-  //fethc the data and show via the table
+  // fetch the data and show via the table
   const [employees, setEmployees] = useState([]);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+
   useEffect(() => {
     fetchData();
   }, []);
-    const fetchData = async () => {
-      const db = getDatabase();
+
+  const fetchData = async () => {
+    try {
       const dbRef = ref(db, "createEmployee/newEmployee");
       const snapshot = await get(dbRef);
 
       if (snapshot.exists()) {
         const data = snapshot.val();
+        // data keys are user UIDs (because MemberAdd stores under uid)
         const formattedData = Object.entries(data).map(([key, value]) => ({
-          firebaseId: key, // capture Firebase key
-          ...value, // include the rest of the employee data
+          firebaseId: key, // UID
+          ...value,
         }));
         setEmployees(formattedData);
       } else {
+        setEmployees([]);
         console.error("No data available");
       }
-    };
+    } catch (err) {
+      console.error("Error fetching employees:", err);
+    }
+  };
 
   const updateRecord = async (firebaseId) => {
-  try {
-    const db = getDatabase();
-    const recordRef = ref(db, `createEmployee/newEmployee/${firebaseId}`);
-
-    if (!firebaseId) throw new Error("Invalid firebaseId");
-    const {memberID,fullname,dOJ,department,rols,phoneNumber,address,email,} = formData;
-    if (!memberID || !fullname || !dOJ || !department || !rols || !phoneNumber) {
-      throw new Error("Missing required fields");
-    }
-    await set(recordRef, {memberID,fullname,dOJ,department,rols,phoneNumber,address,email,firebaseId, // store firebaseId too, if you want
-    });
-    toast.success("Record updated successfully");
-    fetchData(); // make sure fetchData is defined to reload data
-
-  } catch (error) {
-    console.error("Error updating record:", error);
-    toast.error("Failed to update record");
-  }
-};
-const deleteRecord = async (firebaseId) => {
     try {
-      console.log("Attempting to delete record with Firebase ID:", firebaseId);
+      if (!firebaseId) throw new Error("Invalid firebaseId");
 
-      const db = getDatabase();
+      const { memberID, fullname, dOJ, department, rols, phoneNumber, address, email } = formData;
+      if (!memberID || !fullname || !dOJ || !department || !rols || !phoneNumber) {
+        toast.error("Please fill required fields before update");
+        return;
+      }
+
       const recordRef = ref(db, `createEmployee/newEmployee/${firebaseId}`);
+      // Note: this updates DB only. Updating Firebase Auth email/password requires admin privileges.
+      await set(recordRef, {
+        memberID,
+        fullname,
+        dOJ,
+        department,
+        rols,
+        phoneNumber,
+        address: address || "",
+        email: email || "",
+        firebaseId,
+        updatedAt: new Date().toISOString(),
+      });
 
-      // Check if firebaseId is null or undefined
+      toast.success("Record updated (database). Auth account not modified here.");
+      fetchData();
+    } catch (error) {
+      console.error("Error updating record:", error);
+      toast.error("Failed to update record");
+    }
+  };
+
+  const deleteRecord = async (firebaseId) => {
+    try {
       if (!firebaseId) {
         throw new Error("Invalid firebaseId");
       }
 
-      // Delete the record from the database
+      const recordRef = ref(db, `createEmployee/newEmployee/${firebaseId}`);
       await remove(recordRef);
-      console.log("Record deleted successfully");
-      toast.success("Record deleted successfully");
-      //fetchData(); // Refresh data
+      toast.success("Database record deleted. To delete Auth user, use Admin SDK/Cloud Function.");
+      fetchData();
     } catch (error) {
       console.error("Error deleting record:", error);
       toast.error("Failed to delete record");
     }
   };
+
   const handleAddEmployeeClick = () => {
     navigate("/adminProfileadd");
   };
 
   const openUpdateModal = (employee, idx) => {
-    const employees = {
+    const empObj = {
       ...employee,
       key: idx,
-      firebaseId: employee.firebaseId, 
+      firebaseId: employee.firebaseId,
       memberID: employee.memberID,
       fullname: employee.fullname,
       department: employee.department,
       rols: employee.rols,
       phoneNumber: employee.phoneNumber,
       dOJ: employee.dOJ,
+      address: employee.address,
+      email: employee.email,
     };
-    setSelectedEmployee(employees);
-    setFormData(employees);
+    setSelectedEmployee(empObj);
+    setFormData(empObj);
     setIsModified(false);
     setShowModal(true);
   };
-  // state declarations
+
+  // state declarations for confirm-delete UI
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
 
@@ -116,8 +138,9 @@ const deleteRecord = async (firebaseId) => {
   };
 
   const confirmDelete = () => {
-    console.log("Delete confirmed:", employeeToDelete);
-    // TODO: delete logic
+    if (employeeToDelete) {
+      deleteRecord(employeeToDelete.firebaseId);
+    }
     setShowDeleteConfirm(false);
     setEmployeeToDelete(null);
   };
@@ -129,30 +152,36 @@ const deleteRecord = async (firebaseId) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const updated = { ...formData, [name]: value };
+
+    // some inputs use different name keys in your JSX; handle legacy "id" vs "memberID"
+    const fieldName = name === "id" ? "memberID" : name;
+
+    const updated = { ...formData, [fieldName]: value };
     setFormData(updated);
 
-    // Check if any changes are made compared to original selectedEmployee
     const modified = Object.keys(updated).some(
-      (key) => updated[key] !== selectedEmployee[key]
+      (key) => updated[key] !== (selectedEmployee[key] ?? "")
     );
     setIsModified(modified);
   };
 
   const handleEditClick = () => {
- fileInputRef.current.click();
+    fileInputRef.current.click();
   };
 
-  const handlePasswordClick = (e) => {
-    e.preventDefault();
-    setShowPasswordModal(true);
-  };
-
-  const handlePasswordSubmit = () => {
-    console.log("New:", newPassword, "Confirm:", confirmPassword);
-    setShowPasswordModal(false);
-    setNewPassword("");
-    setConfirmPassword("");
+  // sends password reset email to employee so they can set their own password
+  const handleSendPasswordReset = async (email) => {
+    if (!email) {
+      toast.error("Employee email not available");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast.success("Password reset email sent to employee");
+    } catch (err) {
+      console.error("Error sending password reset:", err);
+      toast.error("Failed to send password reset email");
+    }
   };
 
   const handleModalClose = () => {
@@ -164,22 +193,19 @@ const deleteRecord = async (firebaseId) => {
 
   const handleUpdateSubmit = (e) => {
     e.preventDefault();
-    console.log("Updated Data:", formData);
+    // If you want to update both DB and optionally trigger reset email:
+    updateRecord(formData.firebaseId);
     setShowModal(false);
     setIsModified(false);
   };
 
   return (
     <AdminLayout>
-      .
       <Toaster />
       <div className="admin-employee-container">
         <div className="profile-header">
           <h2>All Employees</h2>
-          <button
-            className="add-employee-button"
-            onClick={handleAddEmployeeClick}
-          >
+          <button className="add-employee-button" onClick={handleAddEmployeeClick}>
             + Add New Employee
           </button>
         </div>
@@ -207,28 +233,18 @@ const deleteRecord = async (firebaseId) => {
             </thead>
             <tbody>
               {employees.map((emp, idx) => (
-                <tr key={idx}>
+                <tr key={emp.firebaseId || idx}>
                   <td>{emp.memberID}</td>
                   <td>{emp.fullname}</td>
                   <td>{emp.department}</td>
                   <td>{emp.rols}</td>
                   <td>
-                    <button
-                      className="action-btn"
-                      onClick={() => openUpdateModal(emp)}
-                    >
-                      <SystemUpdateAltRoundedIcon
-                        style={{ fontSize: 12, marginRight: 5 }}
-                      />
+                    <button className="action-btn" onClick={() => openUpdateModal(emp, idx)}>
+                      <SystemUpdateAltRoundedIcon style={{ fontSize: 12, marginRight: 5 }} />
                       Update
                     </button>
-                    <button
-                      className="action-btn delete"
-                      onClick={() => deleteRecord(emp.firebaseId)}
-                    >
-                      <DeleteRoundedIcon
-                        style={{ fontSize: 12, marginRight: 5 }}
-                      />
+                    <button className="action-btn delete" onClick={() => handleDeleteClick(emp)}>
+                      <DeleteRoundedIcon style={{ fontSize: 12, marginRight: 5 }} />
                       Delete
                     </button>
                   </td>
@@ -253,25 +269,14 @@ const deleteRecord = async (firebaseId) => {
                   <label>
                     Upload Photo<span>*</span>
                   </label>
-                  <button
-                    type="button"
-                    className="admin-upload-btn"
-                    onClick={handleEditClick}
-                  >
+                  <button type="button" className="admin-upload-btn" onClick={handleEditClick}>
                     <EditSharpIcon className="admin-edit-icon" /> Choose File
                   </button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    style={{ display: "none" }}
-                  />
+                  <input type="file" ref={fileInputRef} style={{ display: "none" }} />
                 </div>
               </div>
 
-              <form
-                className="admin-member-form two-column-form"
-                onSubmit={handleUpdateSubmit}
-              >
+              <form className="admin-member-form two-column-form" onSubmit={handleUpdateSubmit}>
                 <div className="form-columns">
                   {/* Left Column: Member Details */}
                   <div className="admin-details-section">
@@ -332,25 +337,23 @@ const deleteRecord = async (firebaseId) => {
                           name="email"
                           value={formData.email || ""}
                           onChange={handleInputChange}
+                          disabled
                         />
                       </div>
                       <div className="admin-form-row">
                         <label>Change Password</label>
-                        <input
-                          type="password"
-                          placeholder="Enter Password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                        />
-                      </div>
-                      <div className="admin-form-row">
-                        <label>Confirm Password</label>
-                        <input
-                          type="password"
-                          placeholder="Again Enter Password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button
+                            type="button"
+                            className="admin-upload-btn"
+                            onClick={() => handleSendPasswordReset(formData.email)}
+                          >
+                            Send Password Reset Email
+                          </button>
+                          <small style={{ alignSelf: "center" }}>
+                            Sends reset link to the employee's email.
+                          </small>
+                        </div>
                       </div>
                     </fieldset>
                   </div>
@@ -399,15 +402,15 @@ const deleteRecord = async (firebaseId) => {
                 {/* Buttons Below */}
                 <div className="admin-button-group">
                   {isModified && (
-                    <button   onClick={() => updateRecord(formData.firebaseId)} type="submit" className="admin-submit-btn">
+                    <button
+                      onClick={() => updateRecord(formData.firebaseId)}
+                      type="submit"
+                      className="admin-submit-btn"
+                    >
                       Update
                     </button>
                   )}
-                  <button
-                    type="button"
-                    className="admin-cancel-btn"
-                    onClick={handleModalClose}
-                  >
+                  <button type="button" className="admin-cancel-btn" onClick={handleModalClose}>
                     Cancel
                   </button>
                 </div>
@@ -416,48 +419,14 @@ const deleteRecord = async (firebaseId) => {
           </div>
         )}
 
-        {/* Password Change Modal */}
-        {/* {showPasswordModal && (
-          <div className="admin-modal-overlay">
-            <div className="admin-modal-box">
-              <h3>Change Password</h3>
-              <label>
-                New Password<span>*</span>
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <label>
-                Confirm Password<span>*</span>
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-              <div className="admin-modal-actions">
-                <button onClick={handlePasswordSubmit}>OK</button>
-                <button onClick={() => setShowPasswordModal(false)}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>  
-        )} */}
         {showDeleteConfirm && (
           <div className="edit-modal">
             <div className="modal-content">
               <h3>Confirm Delete</h3>
               <p>
-                Are you sure you want to delete{" "}
-                <strong>{employeeToDelete?.name}</strong>?
+                Are you sure you want to delete <strong>{employeeToDelete?.fullname}</strong>?
               </p>
-              <div
-                className="admin-button-group"
-                style={{ justifyContent: "center" }}
-              >
+              <div className="admin-button-group" style={{ justifyContent: "center" }}>
                 <button
                   className="action-btn delete"
                   onClick={confirmDelete}
