@@ -66,32 +66,39 @@ const showToast = (message, type = "success") => {
 
 
   // ----- Load tasks from DB realtime -----
-  useEffect(() => {
-    const nodeRef = ref(database, tasksRefPath);
-    const unsubscribe = onValue(
-      nodeRef,
-      (snapshot) => {
-        const val = snapshot.val();
-        const arr = [];
-        if (val) {
-          for (const key of Object.keys(val)) {
-            arr.push({ dbKey: key, ...val[key] });
-          }
+useEffect(() => {
+  const nodeRef = ref(database, tasksRefPath);
+  const unsubscribe = onValue(nodeRef, (snapshot) => {
+    const val = snapshot.val();
+    const arr = [];
+    const today = new Date();
+
+    if (val) {
+      for (const key of Object.keys(val)) {
+        let task = val[key];
+        const endDate = new Date(task.endDate + 'T23:59:59');
+
+        // Auto-update Pending → Incomplete if past end date
+        if (task.status === 'Pending' && today > endDate) {
+          task.status = 'Incomplete';
+          update(ref(database, `${tasksRefPath}/${key}`), { status: 'Incomplete' });
         }
-        // sort descending by createdAt if present or by id
-        arr.sort((a, b) => {
-          if (a.createdAt && b.createdAt) return b.createdAt - a.createdAt;
-          return (b.id || '').localeCompare(a.id || '');
-        });
-        setTasks(arr);
-      },
-      (err) => {
-        console.error('Error reading tasks:', err);
-        showToast('Failed to load tasks from DB', 'error');
+
+        arr.push({ dbKey: key, ...task });
       }
-    );
-    return () => unsubscribe();
-  }, []);
+    }
+
+    // sort descending
+    arr.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+    setTasks(arr);
+  }, (err) => {
+    console.error('Error reading tasks:', err);
+    showToast('Failed to load tasks from DB', 'error');
+  });
+
+  return () => unsubscribe();
+}, []);
+
 
   // ----- Utility: generate next Task ID (T001...) based on existing tasks -----
   const generateNextTaskId = (existingTasks = tasks) => {

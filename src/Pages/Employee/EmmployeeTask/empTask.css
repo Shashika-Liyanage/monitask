@@ -136,3 +136,50 @@ body, html {
     max-height: 80vh;
   }
 }
+/* === Employee Task Filters === */
+.employee-task-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.employee-task-filters select {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  outline: none;
+  background-color: #fff;
+  transition: all 0.3s ease;
+}
+
+.employee-task-filters select:hover {
+  border-color: #C58940; /* Matches your theme */
+}
+
+.complete-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  color: #000;
+  background: linear-gradient(145deg, #FFD700, #FFC107);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+}
+
+.complete-btn:hover {
+  background: linear-gradient(145deg, #FFCA28, #FFB300);
+  transform: translateY(-2px);
+}
+
+.complete-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #ddd;
+  color: #555;
+}
+

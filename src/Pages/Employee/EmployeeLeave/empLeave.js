@@ -4,61 +4,56 @@ import 'react-calendar/dist/Calendar.css';
 import EmployeeLayout from '../../../Layout/Employee_Layout/EmployeeL';
 import './empLeave.css';
 
-// Import Realtime Database services
-import { database } from '../../../Service/FirebaseConfig'; // Import 'database' from your config
-import { ref, onValue, push, serverTimestamp } from 'firebase/database';
+import { getAuth } from "firebase/auth";
+import { getDatabase, ref, onValue, push, serverTimestamp, get } from "firebase/database";
+import app from '../../../Service/FirebaseConfig';
+
 import toast, { Toaster } from "react-hot-toast";
-// Assuming you have an authentication context or helper to get the user ID
-// import { useAuth } from '../../../hooks/useAuth'; 
-
-/* ========== Admin-like Toast component (added) ========== */
-/* Matches the design in your adminLeave.css toast */
-const Toast = ({ message, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className="toast-container">
-      <div className="toast-message">
-        {message}
-      </div>
-    </div>
-  );
-};
-/* ======================================================= */
 
 function Employeeleave() {
   const [date, setDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState('All');
   const [leaveHistory, setLeaveHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Hardcoded for demonstration. **Replace with actual authenticated user ID.**
-  const currentUserId = 'emp_12345'; 
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+  const [employeeData, setEmployeeData] = useState(null);
 
-  // State for the new leave request form
+  // Fetch logged-in employee data
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const employeeRef = ref(db, `createEmployee/newEmployee/${user.uid}`);
+        const snapshot = await get(employeeRef);
+        if (snapshot.exists()) setEmployeeData(snapshot.val());
+      } catch (error) {
+        console.error("Failed to fetch employee data:", error);
+        toast.error("Failed to fetch employee data");
+      }
+    };
+    const unsubscribe = auth.onAuthStateChanged(user => { if (user) fetchEmployeeData(); });
+    return () => unsubscribe();
+  }, []);
+
+  const currentUserId = employeeData?.memberID || '';
+
+  // Leave limits
+  const LEAVE_LIMITS = { Annual: 5, Casual: 10, Medical: 10, 'Half Day': 3 };
+  const TOTAL_LEAVE_LIMIT = 28;
+
   const [newLeave, setNewLeave] = useState({
     employeeId: currentUserId,
-    type: 'Sick Off',
+    type: 'Annual',
     fromDate: '',
     toDate: '',
     description: '',
-    status: 'Pending', // Default status on submission
+    status: 'Pending',
   });
 
-  // --- Toast state (added) ---
-  const [toastState, setToastState] = useState({ show: false, message: '' });
-  const showToast = (message) => setToastState({ show: true, message });
-  const hideToast = () => setToastState({ show: false, message: '' });
-
-  // Compute today's date string in YYYY-MM-DD for min attributes and comparisons
   const getTodayString = () => {
     const t = new Date();
     const yyyy = t.getFullYear();
@@ -68,142 +63,116 @@ function Employeeleave() {
   };
   const today = getTodayString();
 
-  // --- Real-Time Data Fetching (useEffect) ---
+  // Real-time leave fetching
   useEffect(() => {
-    // 1. Create a reference to the 'leaveRequests' node in the Realtime Database
-    const leaveRef = ref(database, 'leaveRequests');
-    
-    // 2. Set up a real-time listener (onValue)
-    const unsubscribe = onValue(leaveRef, (snapshot) => {
+    const leaveRef = ref(db, 'leaveRequests');
+    const unsubscribe = onValue(leaveRef, snapshot => {
       const data = snapshot.val();
       const leaves = [];
-      
       if (data) {
-        // Realtime DB returns an object of objects, so we need to convert it to an array
-        for (let id in data) {
-          leaves.push({
-            id,
-            ...data[id],
-          });
-        }
+        for (let id in data) leaves.push({ id, ...data[id] });
       }
-
-      // Sort by creation time (assuming 'createdAt' is saved)
-      leaves.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)); 
-      
+      leaves.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setLeaveHistory(leaves);
       setLoading(false);
-    }, (error) => {
-      console.error("Error fetching leave requests from Realtime DB: ", error);
-      setLoading(false);
-    });
-
-    // 3. Clean up the listener on component unmount
+    }, error => { console.error("Error fetching leave requests:", error); setLoading(false); });
     return () => unsubscribe();
   }, []);
 
-  // --- Form Handlers ---
-
-  const handleOpenModal = () => setShowModal(true);
-  
+  const handleOpenModal = () => {
+    setNewLeave(prev => ({ ...prev, employeeId: employeeData?.memberID || '', type: 'Annual' }));
+    setShowModal(true);
+  };
   const handleCloseModal = () => {
     setShowModal(false);
-    // Reset form state on close/cancel
-    setNewLeave({
-      employeeId: currentUserId,
-      type: 'Sick Off',
-      fromDate: '',
-      toDate: '',
-      description: '',
-      status: 'Pending',
-    });
+    setNewLeave({ employeeId: employeeData?.memberID || '', type: 'Annual', fromDate: '', toDate: '', description: '', status: 'Pending' });
   };
-
-  const handleFormChange = (e) => {
-    setNewLeave({ ...newLeave, [e.target.name]: e.target.value });
-  };
+  const handleFormChange = (e) => setNewLeave({ ...newLeave, [e.target.name]: e.target.value });
 
   const handleLeaveSubmit = async (e) => {
     e.preventDefault();
     if (!newLeave.fromDate || !newLeave.toDate || !newLeave.description || !newLeave.type) {
-        alert("Please fill in all required fields.");
-        return;
+      toast.error("Please fill in all required fields.");
+      return;
     }
 
-    // Validation: fromDate/toDate must not be before today
-    // and toDate must not be earlier than fromDate
     try {
       const from = new Date(newLeave.fromDate + 'T00:00:00');
       const to = new Date(newLeave.toDate + 'T00:00:00');
       const todayDate = new Date(getTodayString() + 'T00:00:00');
 
       if (from < todayDate || to < todayDate) {
-        // Show both toast types (react-hot-toast and admin-style)
         toast.error('Selected dates cannot be before today.');
-        showToast('Selected dates cannot be before today.');
         return;
       }
-
       if (to < from) {
         toast.error('End date cannot be earlier than start date.');
-        showToast('End date cannot be earlier than start date.');
         return;
       }
 
-      const leaveRef = ref(database, 'leaveRequests');
-      
-      // Use 'push' to create a unique key and add the data
-      await push(leaveRef, {
-        ...newLeave,
-        // Using serverTimestamp() for accurate, non-local creation time
-        createdAt: serverTimestamp(), 
-      });
+      const currentYear = new Date().getFullYear();
+      const employeeLeavesThisYear = leaveHistory.filter(
+        l => l.employeeId === currentUserId && new Date(l.fromDate).getFullYear() === currentYear
+      );
 
-      // Keep existing react-hot-toast behavior
+      // Prevent duplicate leave for same day
+      const duplicateLeave = employeeLeavesThisYear.find(l => l.fromDate === newLeave.fromDate);
+      if (duplicateLeave) {
+        toast.error('You already have a leave request for this day.');
+        return;
+      }
+
+      // Check type limits
+      const leaveTypeCount = employeeLeavesThisYear.filter(l => l.type === newLeave.type).length;
+      if (leaveTypeCount >= LEAVE_LIMITS[newLeave.type]) {
+        toast.error(`You have reached the maximum ${newLeave.type} leaves for this year.`);
+        return;
+      }
+
+      // Check total leave
+      if (employeeLeavesThisYear.length >= TOTAL_LEAVE_LIMIT) {
+        toast.error('You have reached your total leave limit for this year.');
+        return;
+      }
+
+      // Submit leave
+      const leaveRef = ref(db, 'leaveRequests');
+      await push(leaveRef, { ...newLeave, createdAt: serverTimestamp() });
       toast.success('Leave request submitted successfully!');
-
-      // ALSO show admin-style toast (matching adminLeave)
-      showToast('Leave request submitted successfully!');
-
       handleCloseModal();
     } catch (error) {
-      console.error("Error submitting leave request to Realtime DB: ", error);
-      // Keep existing react-hot-toast behavior
-      toast.error('Failed to submit leave request. Check console for details.');
-
-      // ALSO show admin-style toast for error
-      showToast('Failed to submit leave request.');
+      console.error("Error submitting leave request:", error);
+      toast.error('Failed to submit leave request.');
     }
   };
 
-  // --- Display Logic ---
-  
-  const handleToggleHistory = () => setShowHistory((prev) => !prev);
-  const handleMonthChange = (e) => setSelectedMonth(e.target.value);
+  const filteredLeaves = leaveHistory
+    .filter(l => l.employeeId === currentUserId)
+    .filter(({ toDate }) => selectedMonth === 'All' || new Date(toDate).getMonth() + 1 === parseInt(selectedMonth));
 
-  // Filter leaves based on selected month (uses the fetched leaveHistory)
-  const filteredLeaves = leaveHistory.filter(({ toDate }) => {
-    if (selectedMonth === 'All') return true;
-    
-    // Note: Dates must be in 'YYYY-MM-DD' format from the input/database
-    const monthNumber = new Date(toDate).getMonth() + 1; 
-    return monthNumber === parseInt(selectedMonth, 10);
-  });
+  const approvedCount = leaveHistory.filter(l => l.status === 'Approved' && l.employeeId === currentUserId).length;
+  const pendingCount = leaveHistory.filter(l => l.status === 'Pending' && l.employeeId === currentUserId).length;
+  const rejectedCount = leaveHistory.filter(l => l.status === 'Rejected' && l.employeeId === currentUserId).length;
 
-  // Calculate summary counts from the real-time data
-  const approvedCount = leaveHistory.filter(l => l.status === 'Approved').length;
-  const pendingCount = leaveHistory.filter(l => l.status === 'Pending').length;
-  const rejectedCount = leaveHistory.filter(l => l.status === 'Rejected').length;
-  
-  if (loading) {
-    return <EmployeeLayout><div className="loading-state">Loading Leave Data...</div></EmployeeLayout>;
-  }
+  if (loading) return <EmployeeLayout><div className="loading-state">Loading Leave Data...</div></EmployeeLayout>;
 
   return (
-
     <EmployeeLayout>
-      {/* Keep your existing react-hot-toast Toaster */}
-      <Toaster />
+      <Toaster 
+        position="bottom-center" 
+        reverseOrder={false}
+        toastOptions={{
+          success: {
+            style: { background: '#4CAF50', color: '#fff', fontWeight: 600 },
+          },
+          error: {
+            style: { background: '#F44336', color: '#fff', fontWeight: 600 },
+          },
+          loading: {
+            style: { background: '#2196F3', color: '#fff', fontWeight: 600 },
+          },
+        }}
+      />
 
       <div className="leave-container">
         <h2 className="leave-title">Leave Request</h2>
@@ -212,26 +181,15 @@ function Employeeleave() {
           <div className="leave-calendar-modern">
             <Calendar onChange={setDate} value={date} className="modern-calendar" />
           </div>
-
           <div className="leave-summary-column">
-            <div className="leave-card approved">
-              <p>Approved Leaves</p>
-              <h3>{approvedCount}</h3>
-            </div>
-            <div className="leave-card pending">
-              <p>Pending Leaves</p>
-              <h3>{pendingCount}</h3>
-            </div>
-            <div className="leave-card rejected">
-              <p>Rejected Leaves</p>
-              <h3>{rejectedCount}</h3>
-            </div>
+            <div className="leave-card approved"><p>Approved Leaves</p><h3>{approvedCount}</h3></div>
+            <div className="leave-card pending"><p>Pending Leaves</p><h3>{pendingCount}</h3></div>
+            <div className="leave-card rejected"><p>Rejected Leaves</p><h3>{rejectedCount}</h3></div>
           </div>
         </div>
 
-        {/* Leave History Table */}
         <div className="leave-table-container">
-          <h3 style={{ marginBottom: '10px' }}>Recent Leave History (Real-time)</h3>
+          <h3 style={{ marginBottom: '10px' }}>Recent Leave History</h3>
           <table className="leave-table">
             <thead>
               <tr>
@@ -244,11 +202,7 @@ function Employeeleave() {
             </thead>
             <tbody>
               {filteredLeaves.length === 0 ? (
-                <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', color: '#999' }}>
-                    No leave records found.
-                  </td>
-                </tr>
+                <tr><td colSpan="5" style={{ textAlign: 'center', color: '#999' }}>No leave records found.</td></tr>
               ) : (
                 filteredLeaves.map(({ toDate, fromDate, description, type, status, id }) => (
                   <tr key={id}>
@@ -265,86 +219,48 @@ function Employeeleave() {
         </div>
 
         <div className="leave-actions">
-          <button className="submit-leave-btn" onClick={handleOpenModal}>
-            Request Leave
-          </button>
+          <button className="submit-leave-btn" onClick={handleOpenModal}>Request Leave</button>
         </div>
 
-        {/* Leave Request Modal */}
         {showModal && (
           <div className="modal-wrapper">
             <div className="modal-overlay" onClick={handleCloseModal}></div>
-
             <div className="leave-modal">
               <h3 className="modal-title">Leave Request Form</h3>
               <form className="leave-form" onSubmit={handleLeaveSubmit}>
-                
-                <label>
-                  Employee ID<span className="required">*</span>
+                <label>Employee ID<span className="required">*</span>
                   <input type="text" value={currentUserId} readOnly />
                 </label>
 
-                <label>
-                  Leave Type<span className="required">*</span>
+                <label>Leave Type<span className="required">*</span>
                   <select name="type" value={newLeave.type} onChange={handleFormChange} required>
-                    <option value="Sick Off">Sick Off</option>
+                    <option value="Annual">Annual</option>
                     <option value="Casual">Casual</option>
-                    <option value="Unpaid">Unpaid</option>
+                    <option value="Medical">Medical</option>
                     <option value="Half Day">Half Day</option>
                   </select>
                 </label>
 
-                <label>
-                  Dates<span className="required">*</span>
+                <label>Dates<span className="required">*</span>
                   <div className="date-range">
-                    <input 
-                      type="date" 
-                      name="fromDate" 
-                      value={newLeave.fromDate} 
-                      onChange={handleFormChange} 
-                      required
-                      min={today}            /* prevents picking past dates in UI */
-                    />
+                    <input type="date" name="fromDate" value={newLeave.fromDate} onChange={handleFormChange} required min={today} />
                     <span className="arrow">→</span>
-                    <input 
-                      type="date" 
-                      name="toDate" 
-                      value={newLeave.toDate} 
-                      onChange={handleFormChange} 
-                      required
-                      min={today}            /* prevents picking past dates in UI */
-                    />
+                    <input type="date" name="toDate" value={newLeave.toDate} onChange={handleFormChange} required min={today} />
                   </div>
                 </label>
 
-                <label>
-                  Description<span className="required">*</span>
-                  <textarea 
-                    name="description" 
-                    value={newLeave.description} 
-                    onChange={handleFormChange} 
-                    placeholder="Enter description" 
-                    rows="3" 
-                    required
-                  ></textarea>
+                <label>Description<span className="required">*</span>
+                  <textarea name="description" value={newLeave.description} onChange={handleFormChange} placeholder="Enter description" rows="3" required />
                 </label>
 
                 <div className="modal-actions">
-                  <button type="submit" className="apply-btn">
-                    Apply
-                  </button>
-                  <button type="button" className="cancel-btn" onClick={handleCloseModal}>
-                    Cancel
-                  </button>
+                  <button type="submit" className="apply-btn">Apply</button>
+                  <button type="button" className="cancel-btn" onClick={handleCloseModal}>Cancel</button>
                 </div>
               </form>
             </div>
           </div>
         )}
-
-        {/* ===== Render admin-like toast (added) ===== */}
-        {toastState.show && <Toast message={toastState.message} onClose={hideToast} />}
-        {/* =========================================== */}
       </div>
     </EmployeeLayout>
   );

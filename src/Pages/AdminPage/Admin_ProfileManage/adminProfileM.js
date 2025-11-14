@@ -42,6 +42,25 @@ const Toast = ({ message, type = "success", onClose }) => {
     boxShadow: "0 8px 24px rgba(12,40,82,0.12)",
   };
 
+  // Validate email format
+const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+// Validate phone number (Sri Lanka: 10 digits starting with 0)
+const validatePhone = (phone) => {
+  const regex = /^0\d{9}$/;
+  return regex.test(phone);
+};
+
+// Validate password (at least 8 characters, 1 letter, 1 number, 1 special char)
+const validatePassword = (password) => {
+  const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return regex.test(password);
+};
+
+
   return (
     <div style={wrapper}>
       <div style={messageStyle}>{message}</div>

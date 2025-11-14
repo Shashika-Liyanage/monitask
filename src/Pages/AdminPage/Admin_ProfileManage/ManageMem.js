@@ -1,4 +1,3 @@
-// MemberAdd.jsx
 import React, { useRef, useState, useEffect } from "react";
 import AdminLayout from "../../../Layout/Admin_Layout/AdminL";
 import "./ManageMem.css";
@@ -46,6 +45,11 @@ const Toast = ({ message, type = "success", onClose }) => {
   );
 };
 
+// Validation functions
+const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const validatePhone = (phone) => /^0\d{9}$/.test(phone);
+const validatePassword = (password) => /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+
 function MemberAdd() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -64,9 +68,7 @@ function MemberAdd() {
   const auth = getAuth(app);
   const db = getDatabase(app);
 
-  const showToast = (message, type = "success") => {
-    setToast({ show: true, message, type });
-  };
+  const showToast = (message, type = "success") => setToast({ show: true, message, type });
   const hideToast = () => setToast({ show: false, message: "", type: "success" });
 
   const handlePasswordClick = (e) => {
@@ -77,6 +79,10 @@ function MemberAdd() {
   const handlePasswordSubmit = () => {
     if (newPassword !== confirmPassword) {
       showToast("Passwords do not match", "error");
+      return;
+    }
+    if (!validatePassword(newPassword)) {
+      showToast("Password must be 8+ characters, include number & special character", "error");
       return;
     }
     showToast("Password ready for creation", "success");
@@ -96,7 +102,6 @@ function MemberAdd() {
     setInputDoj("");
   };
 
-  // Generate a unique member ID like EMP001
   const generateMemberID = async () => {
     const dbRef = ref(db, "createEmployee/newEmployee");
     try {
@@ -128,7 +133,7 @@ function MemberAdd() {
       !inputAddress ||
       !inputPhoneNumber ||
       !inputEmail ||
-      !newPassword || // require password set via modal
+      !newPassword ||
       !inputRole ||
       !inputDepartment ||
       !inputDoj
@@ -137,12 +142,25 @@ function MemberAdd() {
       return;
     }
 
+    if (!validateEmail(inputEmail)) {
+      showToast("Invalid email format", "error");
+      return;
+    }
+
+    if (!validatePhone(inputPhoneNumber)) {
+      showToast("Invalid phone number (10 digits, starting with 0)", "error");
+      return;
+    }
+
+    if (!validatePassword(newPassword)) {
+      showToast("Password must be 8+ characters, include number & special character", "error");
+      return;
+    }
+
     try {
-      // Create Firebase Auth user
       const userCredential = await createUserWithEmailAndPassword(auth, inputEmail, newPassword);
       const uid = userCredential.user.uid;
 
-      // Save record in RTDB at /createEmployee/newEmployee/{uid}
       const userRef = ref(db, `createEmployee/newEmployee/${uid}`);
       await set(userRef, {
         firebaseId: uid,
@@ -169,7 +187,6 @@ function MemberAdd() {
     <AdminLayout>
       <div className="admin-member-profile">
         <form className="admin-member-form" onSubmit={addRecord}>
-          {/* Member Details */}
           <div className="admin-details-section">
             <fieldset>
               <legend>Member Details</legend>
@@ -208,12 +225,9 @@ function MemberAdd() {
                   <small style={{ alignSelf: "center" }}>Click to set password for new user</small>
                 </div>
               </div>
-
-              
             </fieldset>
           </div>
 
-          {/* Role Details */}
           <div className="admin-details-section">
             <fieldset>
               <legend>Role Details</legend>
@@ -248,14 +262,12 @@ function MemberAdd() {
             </fieldset>
           </div>
 
-          {/* Buttons */}
           <div className="admin-button-group">
             <button type="submit" className="admin-submit-btn">Add</button>
             <button type="button" className="admin-cancel-btn" onClick={resetForm}>Cancel</button>
           </div>
         </form>
 
-        {/* Password Modal */}
         {showPasswordModal && (
           <div className="admin-modal-overlay">
             <div className="admin-modal-box">
@@ -272,7 +284,6 @@ function MemberAdd() {
           </div>
         )}
 
-        {/* Toast */}
         {toast.show && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       </div>
     </AdminLayout>
