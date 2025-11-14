@@ -1,20 +1,52 @@
+// MemberAdd.jsx
 import React, { useRef, useState, useEffect } from "react";
 import AdminLayout from "../../../Layout/Admin_Layout/AdminL";
-import Person3SharpIcon from "@mui/icons-material/Person3Sharp";
-import EditSharpIcon from "@mui/icons-material/EditSharp";
 import "./ManageMem.css";
-import toast, { Toaster } from "react-hot-toast";
-import {
-  getDatabase,
-  ref,
-  set,
-  get
-} from "firebase/database";
+import { getDatabase, ref, set, get } from "firebase/database";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import app from "../../../Service/FirebaseConfig";
 
+const Toast = ({ message, type = "success", onClose }) => {
+  useEffect(() => {
+    const t = setTimeout(() => onClose(), 5000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  const bg = type === "error" ? "#d32f2f" : "#2e7d32";
+  const border = type === "error" ? "1px solid #b71c1c" : "1px solid #145a2a";
+
+  const wrapper = {
+    position: "fixed",
+    bottom: 30,
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 99999,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const messageStyle = {
+    minWidth: 280,
+    maxWidth: 720,
+    padding: "12px 20px",
+    color: "#fff",
+    fontWeight: 600,
+    textAlign: "center",
+    borderRadius: 10,
+    background: bg,
+    border,
+    boxShadow: "0 8px 24px rgba(12,40,82,0.12)",
+  };
+
+  return (
+    <div style={wrapper}>
+      <div style={messageStyle}>{message}</div>
+    </div>
+  );
+};
+
 function MemberAdd() {
-  const fileInputRef = useRef(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,11 +59,16 @@ function MemberAdd() {
   const [inputDoj, setInputDoj] = useState("");
 
   const [memberID, setMemberID] = useState("Generating...");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const auth = getAuth(app);
   const db = getDatabase(app);
 
-  const handleEditClick = () => fileInputRef.current.click();
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
+  const hideToast = () => setToast({ show: false, message: "", type: "success" });
+
   const handlePasswordClick = (e) => {
     e.preventDefault();
     setShowPasswordModal(true);
@@ -39,12 +76,10 @@ function MemberAdd() {
 
   const handlePasswordSubmit = () => {
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
+      showToast("Passwords do not match", "error");
       return;
     }
-    // Just set the password locally so admin can submit; we don't store it in DB
-    // It will be used on create user
-    toast.success("Password ready for creation");
+    showToast("Password ready for creation", "success");
     setShowPasswordModal(false);
   };
 
@@ -76,12 +111,13 @@ function MemberAdd() {
     } catch (error) {
       console.error("Error generating Member ID:", error);
       setMemberID("EMP_ERR");
-      toast.error("Failed to generate Member ID");
+      showToast("Failed to generate Member ID", "error");
     }
   };
 
   useEffect(() => {
     generateMemberID();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const addRecord = async (e) => {
@@ -92,22 +128,18 @@ function MemberAdd() {
       !inputAddress ||
       !inputPhoneNumber ||
       !inputEmail ||
-      !newPassword || // use the modal password
+      !newPassword || // require password set via modal
       !inputRole ||
       !inputDepartment ||
       !inputDoj
     ) {
-      toast.error("Please fill in all required fields and set a password");
+      showToast("Please fill in all required fields and set a password", "error");
       return;
     }
 
     try {
       // Create Firebase Auth user
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        inputEmail,
-        newPassword
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, inputEmail, newPassword);
       const uid = userCredential.user.uid;
 
       // Save record in RTDB at /createEmployee/newEmployee/{uid}
@@ -119,119 +151,65 @@ function MemberAdd() {
         address: inputAddress,
         phoneNumber: inputPhoneNumber,
         email: inputEmail,
-        // password intentionally not saved in DB (Auth stores it)
         rols: inputRole,
         department: inputDepartment,
         dOJ: inputDoj,
         createdAt: new Date().toISOString(),
       });
 
-      toast.success("Employee created successfully (Auth + DB).");
+      showToast("Employee created successfully", "success");
       resetForm();
     } catch (error) {
       console.error("Error adding record:", error);
-      // Firebase Auth errors are useful to show to admin
-      toast.error(error.message || "Failed to create employee");
+      showToast(error?.message || "Failed to create employee", "error");
     }
   };
 
   return (
     <AdminLayout>
-      <Toaster />
       <div className="admin-member-profile">
-        <form className="admin-member-form">
-          {/* Upload Photo */}
-          <div className="admin-upload-section">
-            <div className="admin-photo-box">
-              <Person3SharpIcon className="admin-person-icon" />
-            </div>
-            <div className="admin-upload-controls">
-              <label>
-                Upload Photo<span>*</span>
-              </label>
-              <button
-                type="button"
-                className="admin-upload-btn"
-                onClick={handleEditClick}
-              >
-                <EditSharpIcon className="admin-edit-icon" /> Choose File
-              </button>
-              <input type="file" ref={fileInputRef} style={{ display: "none" }} />
-            </div>
-          </div>
-
+        <form className="admin-member-form" onSubmit={addRecord}>
           {/* Member Details */}
           <div className="admin-details-section">
             <fieldset>
               <legend>Member Details</legend>
 
               <div className="admin-form-row">
-                <label>
-                  Member ID<span>*</span>
-                </label>
+                <label>Member ID<span>*</span></label>
                 <input required type="text" value={memberID} disabled />
               </div>
 
               <div className="admin-form-row">
-                <label>
-                  Full Name<span>*</span>
-                </label>
-                <input
-                  required
-                  value={inputFullName}
-                  onChange={(e) => setInputFullName(e.target.value)}
-                  type="text"
-                />
+                <label>Full Name<span>*</span></label>
+                <input required value={inputFullName} onChange={(e) => setInputFullName(e.target.value)} type="text" />
               </div>
 
               <div className="admin-form-row">
-                <label>
-                  Address<span>*</span>
-                </label>
-                <input
-                  required
-                  value={inputAddress}
-                  onChange={(e) => setInputAddress(e.target.value)}
-                  type="text"
-                />
+                <label>Address<span>*</span></label>
+                <input required value={inputAddress} onChange={(e) => setInputAddress(e.target.value)} type="text" />
               </div>
 
               <div className="admin-form-row">
-                <label>
-                  Phone<span>*</span>
-                </label>
-                <input
-                  required
-                  value={inputPhoneNumber}
-                  onChange={(e) => setInputPhoneNumber(e.target.value)}
-                  type="tel"
-                />
+                <label>Phone<span>*</span></label>
+                <input required value={inputPhoneNumber} onChange={(e) => setInputPhoneNumber(e.target.value)} type="tel" />
               </div>
 
               <div className="admin-form-row">
-                <label>
-                  Email<span>*</span>
-                </label>
-                <input
-                  required
-                  value={inputEmail}
-                  onChange={(e) => setInputEmail(e.target.value)}
-                  type="email"
-                />
+                <label>Email<span>*</span></label>
+                <input required value={inputEmail} onChange={(e) => setInputEmail(e.target.value)} type="email" />
               </div>
 
               <div className="admin-form-row">
                 <label>Password<span>*</span></label>
-                <input required
-                  type="password"            
-                />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="button" className="admin-upload-btn" onClick={handlePasswordClick}>
+                    Set Password
+                  </button>
+                  <small style={{ alignSelf: "center" }}>Click to set password for new user</small>
+                </div>
               </div>
-                   <div className="admin-form-row">
-                <label>Re-Type Password<span>*</span></label>
-                <input required
-                  type="password"            
-                />
-              </div>
+
+              
             </fieldset>
           </div>
 
@@ -241,14 +219,8 @@ function MemberAdd() {
               <legend>Role Details</legend>
 
               <div className="admin-form-row">
-                <label>
-                  Role<span>*</span>
-                </label>
-                <select
-                  value={inputRole}
-                  onChange={(e) => setInputRole(e.target.value)}
-                  required
-                >
+                <label>Role<span>*</span></label>
+                <select value={inputRole} onChange={(e) => setInputRole(e.target.value)} required>
                   <option value="">Select role</option>
                   <option value="Admin">Admin</option>
                   <option value="Manager">Manager</option>
@@ -258,14 +230,8 @@ function MemberAdd() {
               </div>
 
               <div className="admin-form-row">
-                <label>
-                  Department<span>*</span>
-                </label>
-                <select
-                  value={inputDepartment}
-                  onChange={(e) => setInputDepartment(e.target.value)}
-                  required
-                >
+                <label>Department<span>*</span></label>
+                <select value={inputDepartment} onChange={(e) => setInputDepartment(e.target.value)} required>
                   <option value="">Select Department</option>
                   <option value="Front Office">Front Office</option>
                   <option value="Housekeeping">Housekeeping</option>
@@ -276,27 +242,16 @@ function MemberAdd() {
               </div>
 
               <div className="admin-form-row">
-                <label>
-                  Join Date<span>*</span>
-                </label>
-                <input
-                  required
-                  value={inputDoj}
-                  onChange={(e) => setInputDoj(e.target.value)}
-                  type="date"
-                />
+                <label>Join Date<span>*</span></label>
+                <input required value={inputDoj} onChange={(e) => setInputDoj(e.target.value)} type="date" />
               </div>
             </fieldset>
           </div>
 
           {/* Buttons */}
           <div className="admin-button-group">
-            <button type="button" className="admin-submit-btn" onClick={addRecord}>
-              Add
-            </button>
-            <button type="button" className="admin-cancel-btn" onClick={resetForm}>
-              Cancel
-            </button>
+            <button type="submit" className="admin-submit-btn">Add</button>
+            <button type="button" className="admin-cancel-btn" onClick={resetForm}>Cancel</button>
           </div>
         </form>
 
@@ -305,22 +260,10 @@ function MemberAdd() {
           <div className="admin-modal-overlay">
             <div className="admin-modal-box">
               <h3>Set Password for New User</h3>
-              <label>
-                New Password<span>*</span>
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <label>
-                Confirm Password<span>*</span>
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+              <label>New Password<span>*</span></label>
+              <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              <label>Confirm Password<span>*</span></label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
               <div className="admin-modal-actions">
                 <button onClick={handlePasswordSubmit}>OK</button>
                 <button onClick={() => setShowPasswordModal(false)}>Cancel</button>
@@ -328,6 +271,9 @@ function MemberAdd() {
             </div>
           </div>
         )}
+
+        {/* Toast */}
+        {toast.show && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       </div>
     </AdminLayout>
   );

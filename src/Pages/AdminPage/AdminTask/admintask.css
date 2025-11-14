@@ -383,3 +383,50 @@ body, html {
     font-size: 16px;
   }
 }
+/* toast.css - separate toast styles (bottom center, 5s by JS timer) */
+
+.toast-root {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  animation: toast-pop 220ms cubic-bezier(.2,.9,.2,1);
+}
+
+.toast-message {
+  min-width: 280px;
+  max-width: 720px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(12, 40, 82, 0.12);
+}
+
+/* success (green) and error (red) variants */
+.toast-success .toast-message {
+  background-color: #2e7d32; /* green */
+  border: 1px solid #1b5e20;
+}
+
+.toast-error .toast-message {
+  background-color: #d32f2f; /* red */
+  border: 1px solid #b71c1c;
+}
+
+/* small pop animation */
+@keyframes toast-pop {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(.995); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+/* fade-out animation */
+.toast-hide {
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}

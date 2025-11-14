@@ -4,22 +4,30 @@ import "./adminPerform.css";
 import IosShareRoundedIcon from "@mui/icons-material/IosShareRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
-import { ref, set, update, remove, onValue, push } from "firebase/database";
+import { ref, update, remove, onValue, push, get } from "firebase/database";
 import { database } from "../../../Service/FirebaseConfig";
 
-// Toast Component
-const Toast = ({ message, onClose }) => {
+// Toast Component (bottom-center, 5s duration)
+const Toast = ({ message, type = "success", onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
-    }, 5000);
-
+    }, 5000); // 5 seconds
     return () => clearTimeout(timer);
   }, [onClose]);
 
+  const bg = type === "error" ? "#f44336" : "#4CAF50";
+  const border = type === "error" ? "1px solid #d7372d" : "1px solid #3b9440";
+
   return (
     <div className="toast-container">
-      <div className="toast-message">
+      <div
+        className="toast-message"
+        style={{
+          background: bg,
+          border: border,
+        }}
+      >
         {message}
       </div>
     </div>
@@ -27,17 +35,15 @@ const Toast = ({ message, onClose }) => {
 };
 
 function AdminPerformance() {
-  const [filterDept, setFilterDept] = useState("");
   const [filterEmpId, setFilterEmpId] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
-  
+
   // Toast state
-  const [toast, setToast] = useState({ show: false, message: '' });
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const initialFormState = {
     empId: "",
     name: "",
-    department: "",
     date: "",
     rating: 0,
     score: "",
@@ -50,21 +56,25 @@ function AdminPerformance() {
   const [selectedPerformance, setSelectedPerformance] = useState(null);
   const [originalPerformance, setOriginalPerformance] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState(null);
+
+  // keep both DB key and the employee id (memberID) for the delete confirmation
+  const [deleteTargetId, setDeleteTargetId] = useState(null); // database key (perf.id)
+  const [deleteTargetEmpId, setDeleteTargetEmpId] = useState(null); // perf.empId (employee ID shown in popup)
+
   const [performances, setPerformances] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Function to show toast
-  const showToast = (message) => {
-    setToast({ show: true, message });
+  // Function to show toast with type 'success' | 'error'
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
   };
 
   // Function to hide toast
   const hideToast = () => {
-    setToast({ show: false, message: '' });
+    setToast({ show: false, message: "", type: "success" });
   };
 
-  // Fetch data
+  // Fetch performance data (unchanged)
   useEffect(() => {
     setLoading(true);
     const collectionRef = ref(database, "performanceReviews");
@@ -83,36 +93,81 @@ function AdminPerformance() {
       },
       (error) => {
         console.error("Error fetching performance data: ", error);
-        showToast("Could not fetch performance data.");
+        showToast("Could not fetch performance data.", "error");
         setLoading(false);
       }
     );
     return () => unsubscribe();
   }, []);
 
+  // Helper: lookup employee by memberID (empId) in RTDB and autofill name only
+  const lookupEmployeeById = async (empId) => {
+    const id = String(empId || "").trim();
+    if (!id) {
+      // Clear autofill fields if empId empty
+      setNewPerformance((prev) => ({ ...prev, name: "" }));
+      return;
+    }
+
+    try {
+      const empRef = ref(database, "createEmployee/newEmployee");
+      const snapshot = await get(empRef);
+      if (!snapshot.exists()) {
+        setNewPerformance((prev) => ({ ...prev, name: "" }));
+        showToast("No employee records in database.", "error");
+        return;
+      }
+
+      const data = snapshot.val();
+      let found = null;
+      // data keys are UIDs, record contains memberID property
+      for (const key of Object.keys(data)) {
+        const rec = data[key];
+        if (String(rec.memberID || "").trim() === id) {
+          found = rec;
+          break;
+        }
+      }
+
+      if (found) {
+        setNewPerformance((prev) => ({
+          ...prev,
+          name: found.fullname || "",
+        }));
+        showToast(`Employee found: ${found.fullname || ""}`, "success");
+      } else {
+        setNewPerformance((prev) => ({ ...prev, name: "" }));
+        showToast("No employee found with that ID.", "error");
+      }
+    } catch (err) {
+      console.error("Employee lookup error:", err);
+      showToast("Failed to lookup employee. See console.", "error");
+    }
+  };
+
   // Handle Add New Performance
   const handleAddPerformance = async () => {
     if (!newPerformance.empId || !newPerformance.name) {
-      showToast("Please fill in Employee ID and Name.");
+      showToast("Please fill in Employee ID and Name.", "error");
       return;
     }
 
     try {
       const collectionRef = ref(database, "performanceReviews");
       await push(collectionRef, newPerformance);
-      showToast("Performance review added successfully!");
+      showToast("Performance review added successfully!", "success");
       setNewPerformance(initialFormState);
       setShowAddForm(false);
     } catch (error) {
       console.error("Error adding document: ", error);
-      showToast("Failed to add performance review.");
+      showToast("Failed to add performance review.", "error");
     }
   };
 
   // Handle Update
   const handleUpdatePerformance = async () => {
     if (!selectedPerformance || !selectedPerformance.id) {
-      showToast("No performance review selected.");
+      showToast("No performance review selected.", "error");
       return;
     }
 
@@ -121,41 +176,39 @@ function AdminPerformance() {
       const docRef = ref(database, "performanceReviews/" + docId);
       const { id, ...dataToUpdate } = selectedPerformance;
       await update(docRef, dataToUpdate);
-      showToast("Performance review updated successfully!");
+      showToast("Performance review updated successfully!", "success");
       setShowUpdateForm(false);
       setSelectedPerformance(null);
       setOriginalPerformance(null);
     } catch (error) {
       console.error("Error updating document: ", error);
-      showToast("Failed to update performance review.");
+      showToast("Failed to update performance review.", "error");
     }
   };
 
   // Handle Delete
   const handleDeletePerformance = async () => {
     if (!deleteTargetId) {
-      showToast("No performance ID specified for deletion.");
+      showToast("No performance ID specified for deletion.", "error");
       return;
     }
 
     try {
       const docRef = ref(database, "performanceReviews/" + deleteTargetId);
       await remove(docRef);
-      showToast("Performance review deleted successfully!");
+      showToast("Performance review deleted successfully!", "success");
       setShowDeleteConfirm(false);
       setDeleteTargetId(null);
+      setDeleteTargetEmpId(null);
     } catch (error) {
       console.error("Error deleting document: ", error);
-      showToast("Failed to delete performance review.");
+      showToast("Failed to delete performance review.", "error");
     }
   };
 
-  // Filtering logic
+  // Filtering logic (only by empId)
   const filteredData = performances.filter((item) => {
-    return (
-      (filterDept === "" || item.department === filterDept) &&
-      (filterEmpId === "" || item.empId.includes(filterEmpId))
-    );
+    return (filterEmpId === "" || (item.empId || "").includes(filterEmpId));
   });
 
   return (
@@ -172,13 +225,6 @@ function AdminPerformance() {
         </div>
 
         <div className="performance-filters">
-          <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)}>
-            <option value="">All Departments</option>
-            <option value="IT">IT</option>
-            <option value="HR">HR</option>
-            <option value="Finance">Finance</option>
-            <option value="Marketing">Marketing</option>
-          </select>
           <input
             type="text"
             placeholder="Search by Employee ID"
@@ -194,10 +240,8 @@ function AdminPerformance() {
             <table className="performance-table">
               <thead>
                 <tr>
-                  <th>Feedback ID</th>
                   <th>EMP ID</th>
                   <th>Employee Name</th>
-                  <th>Department</th>
                   <th>Rating</th>
                   <th>Action</th>
                 </tr>
@@ -205,10 +249,8 @@ function AdminPerformance() {
               <tbody>
                 {filteredData.map((perf) => (
                   <tr key={perf.id}>
-                    <td>{perf.id.substring(0, 8)}...</td>
                     <td>{perf.empId}</td>
                     <td>{perf.name}</td>
-                    <td>{perf.department}</td>
                     <td>
                       {Array.from({ length: 5 }, (_, i) => (
                         <StarRoundedIcon
@@ -235,7 +277,9 @@ function AdminPerformance() {
                       <button
                         className="action-btn delete"
                         onClick={() => {
+                          // set both DB key and visible employee ID for the popup
                           setDeleteTargetId(perf.id);
+                          setDeleteTargetEmpId(perf.empId || "");
                           setShowDeleteConfirm(true);
                         }}
                       >
@@ -275,6 +319,7 @@ function AdminPerformance() {
                   onChange={(e) =>
                     setNewPerformance({ ...newPerformance, empId: e.target.value })
                   }
+                  onBlur={() => lookupEmployeeById(newPerformance.empId)} // lookup when leaving field
                 />
               </div>
 
@@ -287,23 +332,6 @@ function AdminPerformance() {
                     setNewPerformance({ ...newPerformance, name: e.target.value })
                   }
                 />
-              </div>
-
-              <div className="input-inline">
-                <label>Department*</label>
-                <select
-                  value={newPerformance.department}
-                  onChange={(e) =>
-                    setNewPerformance({ ...newPerformance, department: e.target.value })
-                  }
-                >
-                  <option value="">Select Department</option>
-                  <option value="HR">HR</option>
-                  <option value="Finance">Finance</option>
-                  <option value="IT">IT</option>
-                  <option value="Sales">Sales</option>
-                  <option value="Marketing">Marketing</option>
-                </select>
               </div>
 
               <div className="input-inline">
@@ -426,26 +454,6 @@ function AdminPerformance() {
               </div>
 
               <div className="input-inline">
-                <label>Department*</label>
-                <select
-                  value={selectedPerformance.department}
-                  onChange={(e) =>
-                    setSelectedPerformance({
-                      ...selectedPerformance,
-                      department: e.target.value,
-                    })
-                  }
-                >
-                  <option value="">Select Department</option>
-                  <option value="HR">HR</option>
-                  <option value="Finance">Finance</option>
-                  <option value="IT">IT</option>
-                  <option value="Sales">Sales</option>
-                  <option value="Marketing">Marketing</option>
-                </select>
-              </div>
-
-              <div className="input-inline">
                 <label>Date*</label>
                 <input
                   type="date"
@@ -548,14 +556,14 @@ function AdminPerformance() {
           </div>
         )}
 
-        {/* DELETE MODAL */}
+        {/* DELETE MODAL (shows employee ID in the message) */}
         {showDeleteConfirm && (
           <div className="performance-popup-overlay">
             <div className="performance-popup-content">
               <h3>Confirm Delete</h3>
               <p>
-                Are you sure you want to delete performance ID{" "}
-                <strong>{deleteTargetId}</strong>?
+                Are you sure you want to delete performance record for Employee ID:{" "}
+                <strong>{deleteTargetEmpId || deleteTargetId}</strong>?
               </p>
               <div className="popup-btn-container">
                 <button className="popup-ok-btn" onClick={handleDeletePerformance}>
@@ -566,6 +574,7 @@ function AdminPerformance() {
                   onClick={() => {
                     setShowDeleteConfirm(false);
                     setDeleteTargetId(null);
+                    setDeleteTargetEmpId(null);
                   }}
                   style={{ marginLeft: "10px" }}
                 >
@@ -577,7 +586,13 @@ function AdminPerformance() {
         )}
 
         {/* TOAST NOTIFICATION */}
-        {toast.show && <Toast message={toast.message} onClose={hideToast} />}
+        {toast.show && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={hideToast}
+          />
+        )}
       </div>
     </AdminLayout>
   );

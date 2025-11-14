@@ -267,3 +267,62 @@
 .toast-message.info {
   background-color: #2196F3;
 }
+
+/* toast.css - bottom-centered toast styles (5s) */
+
+/* container positions the toast in bottom-center */
+.toast-container {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  animation: toastSlideUp 220ms ease-out;
+}
+
+/* message card */
+.toast-message {
+  color: #ffffff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  font-weight: 600;
+  min-width: 260px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* success (green) override if you want explicit classes */
+.toast-message.success {
+  background-color: #4CAF50;
+  border: 1px solid #3b9440;
+}
+
+.toast-message.error {
+  background-color: #f44336;
+  border: 1px solid #d7372d;
+}
+
+/* small entrance animation */
+@keyframes toastSlideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* optional fade out helper if you prefer adding a class to fade */
+.toast-fadeout {
+  animation: toastFadeOut 0.3s ease-in forwards;
+}
+@keyframes toastFadeOut {
+  to { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.995); }
+}

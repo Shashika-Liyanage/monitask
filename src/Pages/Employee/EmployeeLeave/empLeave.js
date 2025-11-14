@@ -11,6 +11,26 @@ import toast, { Toaster } from "react-hot-toast";
 // Assuming you have an authentication context or helper to get the user ID
 // import { useAuth } from '../../../hooks/useAuth'; 
 
+/* ========== Admin-like Toast component (added) ========== */
+/* Matches the design in your adminLeave.css toast */
+const Toast = ({ message, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose();
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="toast-container">
+      <div className="toast-message">
+        {message}
+      </div>
+    </div>
+  );
+};
+/* ======================================================= */
 
 function Employeeleave() {
   const [date, setDate] = useState(new Date());
@@ -32,6 +52,21 @@ function Employeeleave() {
     description: '',
     status: 'Pending', // Default status on submission
   });
+
+  // --- Toast state (added) ---
+  const [toastState, setToastState] = useState({ show: false, message: '' });
+  const showToast = (message) => setToastState({ show: true, message });
+  const hideToast = () => setToastState({ show: false, message: '' });
+
+  // Compute today's date string in YYYY-MM-DD for min attributes and comparisons
+  const getTodayString = () => {
+    const t = new Date();
+    const yyyy = t.getFullYear();
+    const mm = String(t.getMonth() + 1).padStart(2, '0');
+    const dd = String(t.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+  const today = getTodayString();
 
   // --- Real-Time Data Fetching (useEffect) ---
   useEffect(() => {
@@ -95,7 +130,26 @@ function Employeeleave() {
         return;
     }
 
+    // Validation: fromDate/toDate must not be before today
+    // and toDate must not be earlier than fromDate
     try {
+      const from = new Date(newLeave.fromDate + 'T00:00:00');
+      const to = new Date(newLeave.toDate + 'T00:00:00');
+      const todayDate = new Date(getTodayString() + 'T00:00:00');
+
+      if (from < todayDate || to < todayDate) {
+        // Show both toast types (react-hot-toast and admin-style)
+        toast.error('Selected dates cannot be before today.');
+        showToast('Selected dates cannot be before today.');
+        return;
+      }
+
+      if (to < from) {
+        toast.error('End date cannot be earlier than start date.');
+        showToast('End date cannot be earlier than start date.');
+        return;
+      }
+
       const leaveRef = ref(database, 'leaveRequests');
       
       // Use 'push' to create a unique key and add the data
@@ -105,11 +159,20 @@ function Employeeleave() {
         createdAt: serverTimestamp(), 
       });
 
+      // Keep existing react-hot-toast behavior
       toast.success('Leave request submitted successfully!');
+
+      // ALSO show admin-style toast (matching adminLeave)
+      showToast('Leave request submitted successfully!');
+
       handleCloseModal();
     } catch (error) {
       console.error("Error submitting leave request to Realtime DB: ", error);
+      // Keep existing react-hot-toast behavior
       toast.error('Failed to submit leave request. Check console for details.');
+
+      // ALSO show admin-style toast for error
+      showToast('Failed to submit leave request.');
     }
   };
 
@@ -139,7 +202,9 @@ function Employeeleave() {
   return (
 
     <EmployeeLayout>
-                <Toaster />
+      {/* Keep your existing react-hot-toast Toaster */}
+      <Toaster />
+
       <div className="leave-container">
         <h2 className="leave-title">Leave Request</h2>
 
@@ -237,7 +302,8 @@ function Employeeleave() {
                       name="fromDate" 
                       value={newLeave.fromDate} 
                       onChange={handleFormChange} 
-                      required 
+                      required
+                      min={today}            /* prevents picking past dates in UI */
                     />
                     <span className="arrow">→</span>
                     <input 
@@ -245,7 +311,8 @@ function Employeeleave() {
                       name="toDate" 
                       value={newLeave.toDate} 
                       onChange={handleFormChange} 
-                      required 
+                      required
+                      min={today}            /* prevents picking past dates in UI */
                     />
                   </div>
                 </label>
@@ -274,6 +341,10 @@ function Employeeleave() {
             </div>
           </div>
         )}
+
+        {/* ===== Render admin-like toast (added) ===== */}
+        {toastState.show && <Toast message={toastState.message} onClose={hideToast} />}
+        {/* =========================================== */}
       </div>
     </EmployeeLayout>
   );
