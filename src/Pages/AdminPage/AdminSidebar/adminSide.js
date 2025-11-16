@@ -10,6 +10,7 @@ import EmojiPeopleRoundedIcon from '@mui/icons-material/EmojiPeopleRounded';
 import NewspaperRoundedIcon from '@mui/icons-material/NewspaperRounded';
 import TaskRoundedIcon from '@mui/icons-material/TaskRounded';
 import { useNavigate } from 'react-router-dom';
+import Recognition from '../../Recognition/Recognition';
 
 function AdminSideBar({ isOpen, onClose, selectedIndex, setSelectedIndex }) {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ function AdminSideBar({ isOpen, onClose, selectedIndex, setSelectedIndex }) {
     { label: 'Attendance Manage', icon: <EmojiPeopleRoundedIcon />, path: '/adminAttendance' },
     { label: 'Performance Manage', icon: <NewspaperRoundedIcon />, path: '/adminPerformance' },
     { label: 'Task Manage', icon: <TaskRoundedIcon />, path: '/adminTask' },
+     { label: 'Recognition Tool', icon: <EmojiPeopleRoundedIcon />, path: '/RecognitionTool' }
   ];
 
   const handleClick = (index) => {

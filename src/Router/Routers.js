@@ -16,6 +16,7 @@ import AdminLeaveReq from "../Pages/AdminPage/AdminAttendence/adminLeave";
 import AdminPerformance from "../Pages/AdminPage/AdminPerform/adminPerform";
 import AdminTaskManage from "../Pages/AdminPage/AdminTask/adminTask";
 import Login from "../Pages/Logins/login";
+import Recognition from "../Pages/Recognition/Recognition";
 
 const Routers = () => {
   return (
@@ -39,6 +40,7 @@ const Routers = () => {
       <Route path="/adminPerformance" element={<AdminPerformance />} />
       <Route path="/adminTask" element={<AdminTaskManage />} /> 
       <Route path="/dashboard" element={<EmployeeLayout />} /> 
+      <Route path="/RecognitionTool" element={<Recognition />} /> 
     </Routes>
   );
 };
