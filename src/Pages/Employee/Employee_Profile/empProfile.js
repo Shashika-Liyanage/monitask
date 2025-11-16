@@ -1,60 +1,82 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import EmployeeLayout from "../../../Layout/Employee_Layout/EmployeeL";
-import Person3SharpIcon from '@mui/icons-material/Person3Sharp';
-import EditSharpIcon from '@mui/icons-material/EditSharp';
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import { getDatabase, ref, get } from "firebase/database";
+import app from "../../../Service/FirebaseConfig";
 import "./empProfile.css";
 
 function EmployeeProfile() {
   const fileInputRef = useRef(null);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [employeeData, setEmployeeData] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
+  // Show Toast
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 5000);
+  };
+
+  // Fetch logged-in employee data
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        showToast("No logged-in user found", "error");
+        return;
+      }
+
+      try {
+        const employeeRef = ref(db, `createEmployee/newEmployee/${user.uid}`);
+        const snapshot = await get(employeeRef);
+
+        if (snapshot.exists()) {
+          setEmployeeData(snapshot.val());
+        } else {
+          showToast("Employee data not found in database", "error");
+        }
+      } catch (error) {
+        console.error("Error fetching employee data:", error);
+        showToast("Failed to fetch employee data", "error");
+      }
+    };
+
+    // Only fetch after user is authenticated
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) fetchEmployeeData();
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
+
+  // Handle File Upload (Profile Picture)
   const handleEditClick = () => {
     fileInputRef.current.click();
   };
-   const handlePasswordClick = (e) => {
-    e.preventDefault();
-    setShowPasswordModal(true);
+
+  // Handle Password Reset Email
+  const handlePasswordReset = async () => {
+    if (!employeeData?.email) {
+      showToast("Email not available", "error");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, employeeData.email);
+      showToast("Password reset email sent to your email", "success");
+    } catch (err) {
+      console.error("Error sending password reset:", err);
+      showToast("Failed to send password reset email", "error");
+    }
   };
 
-    const handlePasswordSubmit = () => {
-    // Here you could validate and send new passwords to backend
-    console.log("New:", newPassword, "Confirm:", confirmPassword);
-    setShowPasswordModal(false);
-    setNewPassword("");
-    setConfirmPassword("");
-  };
+  if (!employeeData) return <p>Loading profile...</p>;
 
   return (
     <EmployeeLayout>
       <div className="employee-profile">
         <form className="profile-form">
-          {/* Upload Photo */}
-          <div className="upload-section">
-            <div className="photo-box">
-              <Person3SharpIcon className="person-icon" />
-            </div>
-            <div className="upload-controls">
-              <label>
-                Upload Photo<span>*</span>
-              </label>
-              <button
-                type="button"
-                className="upload-btn"
-                onClick={handleEditClick}
-              >
-                <EditSharpIcon className="edit-icon" /> Choose File
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-              />
-            </div>
-          </div>
-
           {/* Personal Details */}
           <div className="details-section">
             <fieldset>
@@ -62,43 +84,38 @@ function EmployeeProfile() {
 
               <div className="form-row">
                 <label>Employee ID<span>*</span></label>
-                <input type="text" />
+                <input type="text" value={employeeData.memberID} readOnly />
               </div>
 
               <div className="form-row">
                 <label>Full Name<span>*</span></label>
-                <input type="text" />
+                <input type="text" value={employeeData.fullname} readOnly />
               </div>
 
               <div className="form-row">
                 <label>Address<span>*</span></label>
-                <input type="text" />
+                <input type="text" value={employeeData.address} readOnly />
               </div>
 
               <div className="form-row">
                 <label>Telephone Number<span>*</span></label>
-                <input type="tel" />
+                <input type="tel" value={employeeData.phoneNumber} readOnly />
               </div>
 
               <div className="form-row">
                 <label>Email<span>*</span></label>
-                <input type="email" />
+                <input type="email" value={employeeData.email} readOnly />
               </div>
 
-               <div className="form-row">
-                <label>Add New Password</label>
-                <input
-                  type="password"
-              
-                  onClick={handlePasswordClick}
-                />
-              </div>
-                      <div className="form-row">
-                <label>Type Again New Password</label>
-                <input
-                  type="password"
-                  onClick={handlePasswordClick}
-                />
+              {/* Password Reset */}
+              <div className="form-row">
+                <label>Password</label>
+                <button type="button" className="admin-upload-btn" onClick={handlePasswordReset}>
+                  Change / Reset Password
+                </button>
+                <small style={{ marginLeft: 10 }}>
+                  A reset link will be sent to your registered email.
+                </small>
               </div>
             </fieldset>
           </div>
@@ -110,28 +127,48 @@ function EmployeeProfile() {
 
               <div className="form-row">
                 <label>Department<span>*</span></label>
-                <input type="text" />
+                <input type="text" value={employeeData.department} readOnly />
               </div>
 
               <div className="form-row">
                 <label>Designation<span>*</span></label>
-                <input type="text" />
+                <input type="text" value={employeeData.rols} readOnly />
               </div>
 
               <div className="form-row">
                 <label>Joining Date<span>*</span></label>
-                <input type="date" />
+                <input type="date" value={employeeData.dOJ} readOnly />
               </div>
             </fieldset>
           </div>
 
-          {/* Submit Button */}
           <div className="submit-btn">
-            <button type="submit">OK</button>
+            <button type="button" onClick={() => showToast("Profile OK clicked")}>
+              OK
+            </button>
           </div>
         </form>
 
-         
+        <input type="file" ref={fileInputRef} style={{ display: "none" }} />
+
+        {toast.show && (
+          <div
+            style={{
+              position: "fixed",
+              bottom: 30,
+              left: "50%",
+              transform: "translateX(-50%)",
+              padding: "12px 20px",
+              background: toast.type === "error" ? "#d32f2f" : "#2e7d32",
+              color: "#fff",
+              borderRadius: 10,
+              fontWeight: 600,
+              zIndex: 9999,
+            }}
+          >
+            {toast.message}
+          </div>
+        )}
       </div>
     </EmployeeLayout>
   );

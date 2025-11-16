@@ -1,45 +1,45 @@
 import React, { useState } from "react";
-import "./Login.css"; // Your CSS for login
+import "./Login.css";
 import { Eye, EyeOff } from "lucide-react";
-import { auth } from "../../Service/FirebaseConfig"; 
+import { auth } from "../../Service/FirebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 
 function Login() {
+  const [userType, setUserType] = useState("employee"); // admin or employee
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
- const handleLogin = async (e) => {
-  e.preventDefault();
-  try {
-    // Firebase login
-    await signInWithEmailAndPassword(auth, email, password);
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-    // Success toast
-    toast.success("Login Successful!");
+    try {
+      // Firebase login
+      await signInWithEmailAndPassword(auth, email, password);
 
-    // Redirect after short delay
-    setTimeout(() => {
-      navigate("/employeeDash");
-    }, 500);
+      toast.success("Login Successful!");
 
-  } catch (err) {
-    console.error(err);
+      // Redirect based on user type
+      setTimeout(() => {
+        if (userType === "admin") navigate("/adminDash");
+        else navigate("/employeeDash");
+      }, 500);
 
-    // Show friendly error messages
-    if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
-      toast.error("Invalid username or password");
-    } else if (err.code === "auth/invalid-email") {
-      toast.error("Invalid email format");
-    } else {
-      toast.error("Login failed. Invalid User Name or Password");
+    } catch (err) {
+      console.error(err);
+
+      if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+        toast.error("Invalid username or password");
+      } else if (err.code === "auth/invalid-email") {
+        toast.error("Invalid email format");
+      } else {
+        toast.error("Login failed. Invalid User Name or Password");
+      }
     }
-  }
-};
-
+  };
 
   return (
     <div className="login-container">
@@ -47,6 +47,31 @@ function Login() {
       <form onSubmit={handleLogin} className="login-form">
         <h2>Login</h2>
 
+        {/* User Type Selection */}
+        <div className="user-type">
+          <label>
+            <input
+              type="radio"
+              name="userType"
+              value="admin"
+              checked={userType === "admin"}
+              onChange={() => setUserType("admin")}
+            />
+            Admin
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="userType"
+              value="employee"
+              checked={userType === "employee"}
+              onChange={() => setUserType("employee")}
+            />
+            Employee
+          </label>
+        </div>
+
+        {/* Email */}
         <div className="form-group">
           <label>Email</label>
           <input
@@ -58,6 +83,7 @@ function Login() {
           />
         </div>
 
+        {/* Password */}
         <div className="form-group relative">
           <label>Password</label>
           <input
@@ -66,12 +92,11 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
             required
-            className="pr-10"
           />
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)}
             className="toggle-password-btn"
+            onClick={() => setShowPassword(!showPassword)}
           >
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>

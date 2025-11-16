@@ -1,19 +1,75 @@
-import React, { useState, useRef, useEffect } from "react";
+// AdminProfileManage.jsx
+import React, { useRef, useState, useEffect } from "react";
 import AdminLayout from "../../../Layout/Admin_Layout/AdminL";
 import SystemUpdateAltRoundedIcon from "@mui/icons-material/SystemUpdateAltRounded";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
-import Person3SharpIcon from "@mui/icons-material/Person3Sharp";
-import EditSharpIcon from "@mui/icons-material/EditSharp";
 import "./adminProfileM.css";
 import { useNavigate, useParams } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
 import { getDatabase, ref, get, remove, set } from "firebase/database";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import app from "../../../Service/FirebaseConfig";
 
+const Toast = ({ message, type = "success", onClose }) => {
+  React.useEffect(() => {
+    const t = setTimeout(() => onClose(), 5000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  const bg = type === "error" ? "#d32f2f" : "#2e7d32";
+  const border = type === "error" ? "1px solid #b71c1c" : "1px solid #145a2a";
+
+  const wrapper = {
+    position: "fixed",
+    bottom: 30,
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 99999,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const messageStyle = {
+    minWidth: 280,
+    maxWidth: 720,
+    padding: "12px 20px",
+    color: "#fff",
+    fontWeight: 600,
+    textAlign: "center",
+    borderRadius: 10,
+    background: bg,
+    border,
+    boxShadow: "0 8px 24px rgba(12,40,82,0.12)",
+  };
+
+  // Validate email format
+const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+// Validate phone number (Sri Lanka: 10 digits starting with 0)
+const validatePhone = (phone) => {
+  const regex = /^0\d{9}$/;
+  return regex.test(phone);
+};
+
+// Validate password (at least 8 characters, 1 letter, 1 number, 1 special char)
+const validatePassword = (password) => {
+  const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return regex.test(password);
+};
+
+
+  return (
+    <div style={wrapper}>
+      <div style={messageStyle}>{message}</div>
+    </div>
+  );
+};
+
 const AdminProfileManage = () => {
   const { firebaseId } = useParams();
-  const fileInputRef = useRef(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState({});
   const [formData, setFormData] = useState({});
@@ -23,13 +79,20 @@ const AdminProfileManage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
 
-  // fetch the data and show via the table
   const [employees, setEmployees] = useState([]);
   const db = getDatabase(app);
   const auth = getAuth(app);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
+
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const showToast = (message, type = "success") => setToast({ show: true, message, type });
+  const hideToast = () => setToast({ show: false, message: "", type: "success" });
+
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
@@ -39,9 +102,8 @@ const AdminProfileManage = () => {
 
       if (snapshot.exists()) {
         const data = snapshot.val();
-        // data keys are user UIDs (because MemberAdd stores under uid)
         const formattedData = Object.entries(data).map(([key, value]) => ({
-          firebaseId: key, // UID
+          firebaseId: key,
           ...value,
         }));
         setEmployees(formattedData);
@@ -51,6 +113,7 @@ const AdminProfileManage = () => {
       }
     } catch (err) {
       console.error("Error fetching employees:", err);
+      showToast("Failed to fetch employee data", "error");
     }
   };
 
@@ -60,12 +123,11 @@ const AdminProfileManage = () => {
 
       const { memberID, fullname, dOJ, department, rols, phoneNumber, address, email } = formData;
       if (!memberID || !fullname || !dOJ || !department || !rols || !phoneNumber) {
-        toast.error("Please fill required fields before update");
+        showToast("Please fill required fields before update", "error");
         return;
       }
 
       const recordRef = ref(db, `createEmployee/newEmployee/${firebaseId}`);
-      // Note: this updates DB only. Updating Firebase Auth email/password requires admin privileges.
       await set(recordRef, {
         memberID,
         fullname,
@@ -79,33 +141,29 @@ const AdminProfileManage = () => {
         updatedAt: new Date().toISOString(),
       });
 
-      toast.success("Record updated (database). Auth account not modified here.");
+      showToast("Record updated Successfully");
       fetchData();
     } catch (error) {
       console.error("Error updating record:", error);
-      toast.error("Failed to update record");
+      showToast("Failed to update record", "error");
     }
   };
 
   const deleteRecord = async (firebaseId) => {
     try {
-      if (!firebaseId) {
-        throw new Error("Invalid firebaseId");
-      }
+      if (!firebaseId) throw new Error("Invalid firebaseId");
 
       const recordRef = ref(db, `createEmployee/newEmployee/${firebaseId}`);
       await remove(recordRef);
-      toast.success("Database record deleted. To delete Auth user, use Admin SDK/Cloud Function.");
+      showToast("Employee Deleted Successfully", "success");
       fetchData();
     } catch (error) {
       console.error("Error deleting record:", error);
-      toast.error("Failed to delete record");
+      showToast("Failed to delete record", "error");
     }
   };
 
-  const handleAddEmployeeClick = () => {
-    navigate("/adminProfileadd");
-  };
+  const handleAddEmployeeClick = () => navigate("/adminProfileadd");
 
   const openUpdateModal = (employee, idx) => {
     const empObj = {
@@ -127,11 +185,6 @@ const AdminProfileManage = () => {
     setShowModal(true);
   };
 
-  // state declarations for confirm-delete UI
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState(null);
-
-  // handler
   const handleDeleteClick = (employee) => {
     setEmployeeToDelete(employee);
     setShowDeleteConfirm(true);
@@ -152,35 +205,24 @@ const AdminProfileManage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
-    // some inputs use different name keys in your JSX; handle legacy "id" vs "memberID"
     const fieldName = name === "id" ? "memberID" : name;
-
     const updated = { ...formData, [fieldName]: value };
     setFormData(updated);
-
-    const modified = Object.keys(updated).some(
-      (key) => updated[key] !== (selectedEmployee[key] ?? "")
-    );
+    const modified = Object.keys(updated).some((key) => updated[key] !== (selectedEmployee[key] ?? ""));
     setIsModified(modified);
   };
 
-  const handleEditClick = () => {
-    fileInputRef.current.click();
-  };
-
-  // sends password reset email to employee so they can set their own password
   const handleSendPasswordReset = async (email) => {
     if (!email) {
-      toast.error("Employee email not available");
+      showToast("Employee email not available", "error");
       return;
     }
     try {
       await sendPasswordResetEmail(auth, email);
-      toast.success("Password reset email sent to employee");
+      showToast("Password reset email sent to employee", "success");
     } catch (err) {
       console.error("Error sending password reset:", err);
-      toast.error("Failed to send password reset email");
+      showToast("Failed to send password reset email", "error");
     }
   };
 
@@ -193,7 +235,6 @@ const AdminProfileManage = () => {
 
   const handleUpdateSubmit = (e) => {
     e.preventDefault();
-    // If you want to update both DB and optionally trigger reset email:
     updateRecord(formData.firebaseId);
     setShowModal(false);
     setIsModified(false);
@@ -201,13 +242,10 @@ const AdminProfileManage = () => {
 
   return (
     <AdminLayout>
-      <Toaster />
       <div className="admin-employee-container">
         <div className="profile-header">
           <h2>All Employees</h2>
-          <button className="add-employee-button" onClick={handleAddEmployeeClick}>
-            + Add New Employee
-          </button>
+          <button className="add-employee-button" onClick={handleAddEmployeeClick}>+ Add New Employee</button>
         </div>
 
         <div className="filters">
@@ -240,12 +278,10 @@ const AdminProfileManage = () => {
                   <td>{emp.rols}</td>
                   <td>
                     <button className="action-btn" onClick={() => openUpdateModal(emp, idx)}>
-                      <SystemUpdateAltRoundedIcon style={{ fontSize: 12, marginRight: 5 }} />
-                      Update
+                      <SystemUpdateAltRoundedIcon style={{ fontSize: 12, marginRight: 5 }} /> Update
                     </button>
                     <button className="action-btn delete" onClick={() => handleDeleteClick(emp)}>
-                      <DeleteRoundedIcon style={{ fontSize: 12, marginRight: 5 }} />
-                      Delete
+                      <DeleteRoundedIcon style={{ fontSize: 12, marginRight: 5 }} /> Delete
                     </button>
                   </td>
                 </tr>
@@ -260,22 +296,6 @@ const AdminProfileManage = () => {
             <div className="modal-content large">
               <h3>Update Employee</h3>
 
-              {/* Upload Photo */}
-              <div className="upload-photo-section">
-                <div className="admin-photo-box">
-                  <Person3SharpIcon className="admin-person-icon" />
-                </div>
-                <div className="admin-upload-controls">
-                  <label>
-                    Upload Photo<span>*</span>
-                  </label>
-                  <button type="button" className="admin-upload-btn" onClick={handleEditClick}>
-                    <EditSharpIcon className="admin-edit-icon" /> Choose File
-                  </button>
-                  <input type="file" ref={fileInputRef} style={{ display: "none" }} />
-                </div>
-              </div>
-
               <form className="admin-member-form two-column-form" onSubmit={handleUpdateSubmit}>
                 <div className="form-columns">
                   {/* Left Column: Member Details */}
@@ -283,76 +303,32 @@ const AdminProfileManage = () => {
                     <fieldset>
                       <legend>Member Details</legend>
                       <div className="admin-form-row">
-                        <label>
-                          Member ID<span>*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="id"
-                          value={formData.memberID || ""}
-                          onChange={handleInputChange}
-                          readOnly
-                          disabled
-                        />
+                        <label>Member ID<span>*</span></label>
+                        <input type="text" name="id" value={formData.memberID || ""} onChange={handleInputChange} readOnly disabled />
                       </div>
                       <div className="admin-form-row">
-                        <label>
-                          Full Name<span>*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="fullname"
-                          value={formData.fullname || ""}
-                          onChange={handleInputChange}
-                        />
+                        <label>Full Name<span>*</span></label>
+                        <input type="text" name="fullname" value={formData.fullname || ""} onChange={handleInputChange} />
                       </div>
                       <div className="admin-form-row">
-                        <label>
-                          Address<span>*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="address"
-                          value={formData.address || ""}
-                          onChange={handleInputChange}
-                        />
+                        <label>Address<span>*</span></label>
+                        <input type="text" name="address" value={formData.address || ""} onChange={handleInputChange} />
                       </div>
                       <div className="admin-form-row">
-                        <label>
-                          Phone<span>*</span>
-                        </label>
-                        <input
-                          type="tel"
-                          name="phoneNumber"
-                          value={formData.phoneNumber || ""}
-                          onChange={handleInputChange}
-                        />
+                        <label>Phone<span>*</span></label>
+                        <input type="tel" name="phoneNumber" value={formData.phoneNumber || ""} onChange={handleInputChange} />
                       </div>
                       <div className="admin-form-row">
-                        <label>
-                          Email<span>*</span>
-                        </label>
-                        <input
-                          type="email"
-                          name="email"
-                          value={formData.email || ""}
-                          onChange={handleInputChange}
-                          disabled
-                        />
+                        <label>Email<span>*</span></label>
+                        <input type="email" name="email" value={formData.email || ""} onChange={handleInputChange} disabled />
                       </div>
                       <div className="admin-form-row">
                         <label>Change Password</label>
                         <div style={{ display: "flex", gap: 8 }}>
-                          <button
-                            type="button"
-                            className="admin-upload-btn"
-                            onClick={() => handleSendPasswordReset(formData.email)}
-                          >
+                          <button type="button" className="admin-upload-btn" onClick={() => handleSendPasswordReset(formData.email)}>
                             Send Password Reset Email
                           </button>
-                          <small style={{ alignSelf: "center" }}>
-                            Sends reset link to the employee's email.
-                          </small>
+                          <small style={{ alignSelf: "center" }}>Sends reset link to the employee's email.</small>
                         </div>
                       </div>
                     </fieldset>
@@ -363,37 +339,16 @@ const AdminProfileManage = () => {
                     <fieldset>
                       <legend>Role Details</legend>
                       <div className="admin-form-row">
-                        <label>
-                          Role<span>*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="rols"
-                          value={formData.rols || ""}
-                          onChange={handleInputChange}
-                        />
+                        <label>Role<span>*</span></label>
+                        <input type="text" name="rols" value={formData.rols || ""} onChange={handleInputChange} />
                       </div>
                       <div className="admin-form-row">
-                        <label>
-                          Department<span>*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="department"
-                          value={formData.department || ""}
-                          onChange={handleInputChange}
-                        />
+                        <label>Department<span>*</span></label>
+                        <input type="text" name="department" value={formData.department || ""} onChange={handleInputChange} />
                       </div>
                       <div className="admin-form-row">
-                        <label>
-                          Join Date<span>*</span>
-                        </label>
-                        <input
-                          type="date"
-                          name="dOJ"
-                          value={formData.dOJ || ""}
-                          onChange={handleInputChange}
-                        />
+                        <label>Join Date<span>*</span></label>
+                        <input type="date" name="dOJ" value={formData.dOJ || ""} onChange={handleInputChange} />
                       </div>
                     </fieldset>
                   </div>
@@ -402,45 +357,31 @@ const AdminProfileManage = () => {
                 {/* Buttons Below */}
                 <div className="admin-button-group">
                   {isModified && (
-                    <button
-                      onClick={() => updateRecord(formData.firebaseId)}
-                      type="submit"
-                      className="admin-submit-btn"
-                    >
-                      Update
-                    </button>
+                    <button onClick={() => updateRecord(formData.firebaseId)} type="submit" className="admin-submit-btn">Update</button>
                   )}
-                  <button type="button" className="admin-cancel-btn" onClick={handleModalClose}>
-                    Cancel
-                  </button>
+                  <button type="button" className="admin-cancel-btn" onClick={handleModalClose}>Cancel</button>
                 </div>
               </form>
             </div>
           </div>
         )}
 
-        {showDeleteConfirm && (
+        {/* DELETE CONFIRM */}
+        {showDeleteConfirm && employeeToDelete && (
           <div className="edit-modal">
             <div className="modal-content">
               <h3>Confirm Delete</h3>
-              <p>
-                Are you sure you want to delete <strong>{employeeToDelete?.fullname}</strong>?
-              </p>
+              <p>Are you sure you want to delete <strong>{employeeToDelete.fullname} ({employeeToDelete.memberID})</strong>?</p>
               <div className="admin-button-group" style={{ justifyContent: "center" }}>
-                <button
-                  className="action-btn delete"
-                  onClick={confirmDelete}
-                  style={{ marginRight: 10 }}
-                >
-                  Yes
-                </button>
-                <button className="action-btn" onClick={cancelDelete}>
-                  No
-                </button>
+                <button className="action-btn delete" onClick={confirmDelete} style={{ marginRight: 10 }}>Yes</button>
+                <button className="action-btn" onClick={cancelDelete}>No</button>
               </div>
             </div>
           </div>
         )}
+
+        {/* Toast */}
+        {toast.show && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
       </div>
     </AdminLayout>
   );

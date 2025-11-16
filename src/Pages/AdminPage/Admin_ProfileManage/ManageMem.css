@@ -305,3 +305,35 @@ legend {
 .admin-form-row select option[disabled] {
   color: #888;
 }
+/* toast.css (optional — not required with the inline styles above) */
+.toast-root {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-message {
+  min-width: 280px;
+  max-width: 720px;
+  padding: 12px 20px;
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(12,40,82,0.12);
+}
+
+.toast-success .toast-message {
+  background-color: #2e7d32;
+  border: 1px solid #145a2a;
+}
+
+.toast-error .toast-message {
+  background-color: #d32f2f;
+  border: 1px solid #b71c1c;
+}
