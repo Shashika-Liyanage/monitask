@@ -224,7 +224,10 @@ function Employeeleave() {
 
         {showModal && (
           <div className="modal-wrapper">
-            <div className="modal-overlay" onClick={handleCloseModal}></div>
+            {/* Overlay removed as requested - previously here was:
+                <div className="modal-overlay" onClick={handleCloseModal}></div>
+                Removing it prevents the dark background and outside-click close behavior.
+            */}
             <div className="leave-modal">
               <h3 className="modal-title">Leave Request Form</h3>
               <form className="leave-form" onSubmit={handleLeaveSubmit}>
