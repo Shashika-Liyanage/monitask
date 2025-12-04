@@ -416,7 +416,7 @@ function AdminAttendanceReq() {
                         <thead>
                             <tr>
                                 <th style={{ display: 'none' }}>Attendance_ID</th> {/* hidden front-end only */}
-                                <th>Employee_ID</th>
+                                <th>Employee ID</th>
                                 <th>Employee</th>
                                 <th>Date</th>
                                 <th>CheckIn_Time</th>
