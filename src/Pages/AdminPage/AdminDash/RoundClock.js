@@ -1,47 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { styled } from '@mui/system';
+import React, { useEffect, useState } from "react";
 
-// Styled Box for the round clock face
-const ClockBox = styled(Box)(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 120, // Define size
-    height: 120,
-    borderRadius: '50%', // Makes it round
-    backgroundColor: '#fff', // White background
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-    p: 1,
-    margin: '0 auto', // Center the clock within its container
-}));
+export default function RoundClock({ city, timezone }) {
+  const [timeData, setTimeData] = useState({
+    time: "",
+    date: "",
+  });
 
-const RoundClock = ({ city, timezone, initialTime }) => {
-    const [time, setTime] = useState(initialTime);
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
 
-    // This useEffect updates the time every second (or minute for simplicity)
-    // NOTE: For true timezone accuracy, you should use Intl.DateTimeFormat or a library like moment-timezone.
-    useEffect(() => {
-        const timer = setInterval(() => {
-            // Placeholder: In a real app, this would calculate time based on timezone.
-            // For now, it just shows the initial time given by the search result.
-            // setTime(new Date().toLocaleTimeString('en-US', { timeZone: timezone, hour: '2-digit', minute: '2-digit' }));
-        }, 60000); 
-        return () => clearInterval(timer);
-    }, [timezone]);
+      const timeString = now.toLocaleTimeString("en-US", {
+        timeZone: timezone,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
 
-    return (
-        <ClockBox>
-            <Typography variant="h6" fontWeight="bold" sx={{ color: 'primary.main' }}>
-                {time}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-                {city}
-            </Typography>
-        </ClockBox>
-    );
-};
+      const dateString = now.toLocaleDateString("en-US", {
+        timeZone: timezone,
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
 
-export default RoundClock;
+      setTimeData({ time: timeString, date: dateString });
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [timezone]);
+
+  return (
+    <div
+      style={{
+        width: 180,
+        height: 180,
+        borderRadius: "50%",
+        background: "white",
+        padding: 20,
+        boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
+      <h4 style={{ margin: 0 }}>{city}</h4>
+      <h2 style={{ margin: "10px 0" }}>{timeData.time}</h2>
+      <p style={{ fontSize: 12, color: "#555", margin: 0 }}>{timeData.date}</p>
+    </div>
+  );
+}
