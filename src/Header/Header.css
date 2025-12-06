@@ -117,3 +117,52 @@
     gap: 10px;
   }
 }
+
+/* Ensure the wrapper is positioned relative to anchor the badge/popup */
+.notification-wrapper {
+    position: relative;
+    cursor: pointer;
+    /* Add padding/margin as needed */
+    margin-right: 15px; 
+}
+
+/* Badge style */
+.notification-badge {
+    position: absolute;
+    top: -5px; /* Adjust vertical position */
+    right: -10px; /* Adjust horizontal position */
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 1;
+    z-index: 5; /* Ensure badge is above other elements */
+}
+
+/* Popup style */
+.notification-popup {
+    position: absolute;
+    top: 100%; /* Position below the icon */
+    right: 0;
+    width: 250px;
+    background-color: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10; /* Ensure popup is above all header elements */
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.notification-popup .popup-title {
+    font-weight: bold;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-top: 0;
+}
+.notification-popup p {
+    margin: 5px 0 0;
+    font-size: 14px;
+}
