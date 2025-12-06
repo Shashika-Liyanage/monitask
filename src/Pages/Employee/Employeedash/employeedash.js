@@ -316,21 +316,21 @@ const EmployeeDashboardContent = () => {
 
                 {/* RIGHT SIDE: Attendance Bar Chart (Now includes WFH column) */}
                 <Grid item xs={12} md={6}>
-                    <Card sx={{ height: '100%', minHeight: 490, p: 2, borderRadius: 2, display: 'flex', flexDirection: 'column' }}> 
+                    <Card sx={{  height: '100%', minHeight: 490, p: 2, borderRadius: 2, display: 'flex', flexDirection: 'column' }}> 
                         <Typography variant="subtitle1" fontWeight="bold" sx={{ ml: 1, mb: 1 }}>
                             Monthly Attendance
                         </Typography>
-                        <Box sx={{ flexGrow: 1, height: 400 }}>
+                        <Box sx={{ flexGrow: 1,width:500, height: 400 }}>
                             {/* Bar chart uses the updated state with 4 data points */}
                             <Bar data={attendanceChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false }, title: { display: false } } }} />
                         </Box>
-                        <Button 
+                        {/* <Button 
                             variant="outlined" 
                             size="small"
                             sx={{ mt: 2 }}
                         >
                             View Details
-                        </Button>
+                        </Button> */}
                     </Card>
                 </Grid>
 
