@@ -6,19 +6,35 @@ import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { 
     ref, get, onValue, 
-    query, orderByChild, equalTo // Added for the task query
+    query, orderByChild, equalTo 
 } from "firebase/database"; 
 import { auth, database } from "../Service/FirebaseConfig";
 import "./Header.css";
 
-// --- NEW STATE STRUCTURE ---
+// --- Time Formatting Helper ---
+const formatDateTime = () => {
+    // Format the time as: Mon, Dec 6, 2025, 08:49:48 PM
+    return new Date().toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+    });
+};
+// ----------------------------
+
+// --- NOTIFICATION STATE STRUCTURE ---
 const DEFAULT_NOTIFICATION_STATE = {
     count: 0,
     latestTaskId: null,
     description: null,
     showPopup: false, 
 };
-// -------------------------
+// ------------------------------------
 
 function EmployeeHeaderView({ onToggleSidebar }) {
     const navigate = useNavigate();
@@ -26,18 +42,32 @@ function EmployeeHeaderView({ onToggleSidebar }) {
     const [employeeId, setEmployeeId] = useState(null); 
     const [showLogoutPopup, setShowLogoutPopup] = useState(false);
     const [notificationState, setNotificationState] = useState(DEFAULT_NOTIFICATION_STATE);
+    
+    // --- NEW STATE: Time and Date ---
+    const [currentTime, setCurrentTime] = useState(formatDateTime());
+    // ---------------------------------
 
     // Function to toggle the notification popup
     const toggleNotificationPopup = useCallback(() => {
         setNotificationState(prev => ({
             ...prev,
             showPopup: !prev.showPopup,
-            // You might want to remove the popup immediately when they click, 
-            // but keep the badge until the task is marked 'Incomplete' or 'Complete'.
         }));
     }, []);
 
-    // --- STEP 1: Fetch logged-in employee name AND empId (required for tasks) ---
+    /**
+     * NEW useEffect: Update time every second
+     */
+    useEffect(() => {
+        const timerId = setInterval(() => {
+            setCurrentTime(formatDateTime());
+        }, 1000);
+
+        // Cleanup function
+        return () => clearInterval(timerId);
+    }, []);
+
+    // STEP 1: Fetch logged-in employee name AND empId (required for tasks)
     useEffect(() => {
         const fetchEmployeeData = async () => {
             const user = auth.currentUser;
@@ -57,12 +87,11 @@ function EmployeeHeaderView({ onToggleSidebar }) {
             }
         };
         fetchEmployeeData();
-    }, []);
+    }, [database]);
 
 
     /**
-     * --- STEP 2: Real-Time Listener for Pending Tasks ---
-     * Checks for tasks assigned to the user where status is "Pending".
+     * STEP 2: Real-Time Listener for Pending Tasks
      */
     useEffect(() => {
         if (!employeeId) return;
@@ -87,15 +116,12 @@ function EmployeeHeaderView({ onToggleSidebar }) {
             snapshot.forEach((childSnapshot) => {
                 const task = childSnapshot.val();
                 
-                // CRITICAL LOGIC FIX: Check for 'Pending' status (case-insensitively)
                 const taskStatus = (task.status || '').toLowerCase(); 
                 const isPending = taskStatus === 'pending'; 
 
                 if (isPending) {
-                    // Show '1' if any pending task exists
                     pendingCount = 1; 
                     
-                    // Find the most recent pending task for the description popup
                     const timestamp = new Date(task.createdAt || 0).getTime();
                     if (timestamp > latestTimestamp) {
                         latestTimestamp = timestamp;
@@ -116,7 +142,6 @@ function EmployeeHeaderView({ onToggleSidebar }) {
             }
         });
 
-        // Cleanup function
         return () => unsubscribe();
     }, [database, employeeId]);
 
@@ -137,9 +162,14 @@ function EmployeeHeaderView({ onToggleSidebar }) {
                 <button className="menu-button" onClick={onToggleSidebar} aria-label="Toggle sidebar">
                     &#9776;
                 </button>
+                
                 <span className="logo-text">Monitask</span>
+                
+            
             </div>
-
+    {/* --- DISPLAY CURRENT TIME --- */}
+                <span style={{ fontSize: "20px", fontWeight:"bold"}} className="current-time">{currentTime}</span>
+                {/* ---------------------------- */}
             <div className="header-right">
                 {/* Logged-in employee name with profile icon */}
                 {employeeName && (
