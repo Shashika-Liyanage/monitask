@@ -3,7 +3,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import Person4RoundedIcon from '@mui/icons-material/Person4Rounded';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ChatIcon from '@mui/icons-material/Chat';
-import { signOut } from "firebase/auth";
+import { signInAnonymously, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { 
     ref, get, onValue, 
@@ -11,7 +11,8 @@ import {
 } from "firebase/database"; 
 import { auth, database } from "../Service/FirebaseConfig";
 import "./Header.css";
-
+import Chatty from '../Pages/Chatty/Chatty';
+import { onAuthStateChanged } from 'firebase/auth';
 // --- Time Formatting Helper ---
 const formatDateTime = () => {
     // Format the time as: Mon, Dec 6, 2025, 08:49:48 PM
@@ -48,6 +49,7 @@ function EmployeeHeaderView({ onToggleSidebar }) {
     const [currentTime, setCurrentTime] = useState(formatDateTime());
     // ---------------------------------
 const [isModalOpen, setIsModalOpen] = useState(false); 
+
 
   // Function to open the modal
   const openChatModal = () => {
@@ -165,6 +167,114 @@ const [isModalOpen, setIsModalOpen] = useState(false);
             console.error("Logout Error:", error);
         }
     };
+useEffect(() => {
+        // Set up the Firebase Auth listener
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            // currentUser will be null if logged out, or a user object if logged in
+            setUser(currentUser); 
+        });
+        
+        return () => unsubscribe(); // Clean up the listener
+    }, []);
+    // .
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [user, setUser] = useState(null); // Holds the Firebase User object
+
+    // 💡 Auth Listener to track the logged-in user
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            // currentUser is null if logged out, or a User object if logged in
+            setUser(currentUser); 
+        });
+        
+        return () => unsubscribe(); // Clean up the listener on unmount
+    }, []);
+
+    // Example function to log in anonymously for testing
+    const handleLogin = async () => {
+        try {
+            await signInAnonymously(auth);
+            // Note: Anonymous user objects DO NOT have a displayName, 
+            // so Chatty will use the email/UID fallback.
+        } catch (error) {
+            console.error("Login failed:", error);
+        }
+    };
+
+
+    // ... existing states ...
+    
+
+
+    
+    // 💡 NEW STATE: The complete user object to pass to Chatty
+    const [chatUser, setChatUser] = useState(null); 
+
+    // ... existing modal functions (openChatModal, closeChatModal) ...
+
+    // ... existing timer useEffect ...
+
+    // STEP 1: Fetch logged-in employee name AND empId (required for tasks)
+    useEffect(() => {
+        const fetchEmployeeData = async () => {
+            const user = auth.currentUser;
+            if (!user) {
+                // Clear state if no user is logged in
+                setEmployeeName("");
+                setEmployeeId(null);
+                setChatUser(null);
+                return;
+            }
+
+            // Set up the basic chat user structure using Firebase Auth UID/Email
+            let userDisplayName = user.displayName || user.email || `User_${user.uid.substring(0, 8)}`;
+            let fetchedMemberID = null;
+
+            try {
+                const dbRef = ref(database, `createEmployee/newEmployee/${user.uid}`);
+                const snapshot = await get(dbRef);
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    // 💡 Overwrite displayName with the fetched full name
+                    userDisplayName = data.fullname || userDisplayName;
+                    fetchedMemberID = data.memberID || null;
+                }
+            } catch (err) {
+                console.error("Error fetching employee data:", err);
+            }
+            
+            // Update states with the fetched data
+            setEmployeeName(userDisplayName); // Use the fetched name for the header display
+            setEmployeeId(fetchedMemberID);
+            
+            // 💡 CRITICAL: Build the final user object to pass to Chatty
+            setChatUser({
+                uid: user.uid,
+                displayName: userDisplayName,
+                email: user.email,
+                // You can add memberID here if needed: memberID: fetchedMemberID
+            });
+
+        };
+
+        // Listen for Auth changes to re-fetch employee data
+        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+            setUser(currentUser); 
+            // Trigger data fetch when the auth state changes
+            if (currentUser) {
+                fetchEmployeeData();
+            } else {
+                // Handle logout case immediately
+                setEmployeeName("");
+                setEmployeeId(null);
+                setChatUser(null);
+            }
+        });
+        
+        // Return unsubscribe function for cleanup
+        return () => unsubscribeAuth();
+    }, []);
 
     return (
         <div className="main-header">
@@ -238,6 +348,11 @@ const [isModalOpen, setIsModalOpen] = useState(false);
                     </div>
                 )}
             </div>
+            <Chatty 
+                isOpen={isModalOpen} 
+                onClose={closeChatModal} 
+                currentUser={chatUser}
+            />
         </div>
     );
 }
