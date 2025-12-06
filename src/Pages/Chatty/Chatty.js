@@ -66,7 +66,7 @@ function Chatty({ isOpen, onClose, currentUser }) {
         // Determine the username: Use displayName, then email, then a UID snippet as fallback
         const senderName = currentUser.displayName || 
                            currentUser.email || 
-                     `User_${currentUser.uid.substring(0, 8)}`
+                     `User${currentUser.uid.substring(0, 8)}`
 
         // 1. Create the message object
         const newMessage = {
