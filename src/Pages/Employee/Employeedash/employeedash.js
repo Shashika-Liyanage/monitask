@@ -7,127 +7,224 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs from 'dayjs';
 import { Doughnut, Bar } from 'react-chartjs-2'; 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js'; 
-import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, onValue, query, orderByChild, equalTo, get } from 'firebase/database';
 import { database } from '../../../Service/FirebaseConfig';
 import { getAuth } from "firebase/auth";
+
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
-// Load Logged User First
-const auth = getAuth();
-const loggedUser = auth.currentUser;
-
-// If user is not logged in → null
-const currentEmpID = loggedUser?.empId;
-const taskData = {
+// --- Chart Constants ---
+const DEFAULT_TASK_DATA = {
     labels: ['Complete Tasks', 'Uncomplete Tasks'],
+    datasets: [{ data: [0, 100], backgroundColor: ['#4CAF50', '#FF9800'], hoverBackgroundColor: ['#45A049', '#FB8C00'] }],
+};
+// --- UPDATED ATTENDANCE CONSTANTS (Adding WFH) ---
+const DEFAULT_ATTENDANCE_DATA = {
+    labels: ['Office Days', 'WFH', 'Absent', 'Late'], // Changed 'Present' to 'Office Days' for clarity in the bar chart
     datasets: [
-        {
-            data: [70, 30], // Example data
-            backgroundColor: ['#4CAF50', '#FF9800'], 
-            hoverBackgroundColor: ['#45A049', '#FB8C00'],
-        },
+        { 
+            label: 'Count', 
+            data: [0, 0, 0, 0], 
+            backgroundColor: [
+                'rgba(75, 192, 192, 0.8)',      // Office Days (Present)
+                'rgba(59, 130, 246, 0.8)',      // WFH
+                'rgba(255, 99, 132, 0.8)',      // Absent
+                'rgba(255, 159, 64, 0.8)',      // Late
+            ], 
+            borderWidth: 1 
+        }
     ],
 };
-const taskOptions = {
+const DEFAULT_WFH_DATA = {
+    labels: ['WFH Days', 'Office Days'],
+    datasets: [{ data: [0, 100], backgroundColor: ['#3F51B5', '#81D4FA'], hoverBackgroundColor: ['#3949AB', '#4FC3F7'] }],
+};
+const WFH_OPTIONS = {
     responsive: true,
     maintainAspectRatio: false,
     cutout: '70%', 
     plugins: {
-        legend: {
-            position: 'right',
-            labels: { boxWidth: 10 }
-        },
+        legend: { position: 'right', labels: { boxWidth: 10 } },
         title: { display: false }
     }
-};
-
-// --- 2. Attendance Data for Bar Chart ---
-// Mock data based on the visualization
-const attendanceData = {
-    labels: ['Present', 'Absent', 'Late'],
-    datasets: [
-        {
-            label: 'Count',
-            data: [20, 3, 5], 
-            backgroundColor: [
-                'rgba(75, 192, 192, 0.8)', 
-                'rgba(255, 99, 132, 0.8)', 
-                'rgba(255, 159, 64, 0.8)', 
-            ],
-            borderWidth: 1,
-        },
-    ],
-};
-const attendanceOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: { y: { beginAtZero: true } },
-    plugins: { legend: { display: false }, title: { display: false } }
 };
 
 // ----------------------------------------------------
 // Employee Dashboard Content Component
 // ----------------------------------------------------
 const EmployeeDashboardContent = () => {
-    // State for the CheckIn/CheckOut button
+    const auth = getAuth();
+    
+    // --- States for Live Data ---
+    const [employeeId, setEmployeeId] = useState(null);
+    const [performanceScore, setPerformanceScore] = useState("Loading..."); 
+    const [taskChartData, setTaskChartData] = useState(DEFAULT_TASK_DATA);
+    const [attendanceChartData, setAttendanceChartData] = useState(DEFAULT_ATTENDANCE_DATA);
+    const [wfhChartData, setWfhChartData] = useState(DEFAULT_WFH_DATA);
     const [isCheckedIn, setIsCheckedIn] = useState(false);
     
-    // Mock State for the Performance Score
-    const [performanceScore, setPerformanceScore] = useState("Loading..."); 
-
     const handleCheckInToggle = () => {
-        // Here you would implement your Firebase write logic for attendance
         setIsCheckedIn(!isCheckedIn);
         console.log(`User ${isCheckedIn ? 'Checked Out' : 'Checked In'}`);
     };
-
-    // Placeholder for the current employee's ID (e.g., fetched from auth context)
-    // We use '004' as seen in your Firebase image for testing/demonstration.
-
-    // -----------------------------------------
-
-
-useEffect(() => {
-    const auth = getAuth();
-    const user = auth.currentUser;
-
-    if (!user) {
-        console.log("⚠️ No logged user found.");
-        setPerformanceScore("N/A");
-        return;
-    }
-
-    const currentEmpID = user.empId;  // make sure your user has empId in auth
-
-    console.log("🔍 Logged user's empId:", currentEmpID);
-
-    if (!currentEmpID) {
-        setPerformanceScore("N/A");
-        return;
-    }
-
-    const performanceQuery = query(
-        ref(database, "performanceReviews"),
-        orderByChild("empId"),
-        equalTo(currentEmpID)
-    );
-
-    const unsubscribe = onValue(performanceQuery, (snapshot) => {
-        if (snapshot.exists()) {
-            const reviews = snapshot.val();
-            const latestKey = Object.keys(reviews).pop();
-            const latestScore = reviews[latestKey].score;
-
-            console.log("🎯 Latest Score:", latestScore);
-
-            setPerformanceScore(latestScore);
-        } else {
+    
+    // --- STEP 1: Fetch employeeId (e.g., "EMP002") from the profile ---
+    useEffect(() => {
+        const user = auth.currentUser;
+        if (!user) {
             setPerformanceScore("N/A");
+            return;
         }
-    });
 
-    return () => unsubscribe();
-}, []);
+        const fetchEmployeeId = async () => {
+            try {
+                const profileRef = ref(database, `createEmployee/newEmployee/${user.uid}`);
+                const snapshot = await get(profileRef);
+                
+                if (snapshot.exists() && snapshot.val().memberID) {
+                    const empId = snapshot.val().memberID;
+                    setEmployeeId(empId);
+                } else {
+                    setPerformanceScore("N/A");
+                }
+            } catch (err) {
+                console.error("Error fetching employee ID:", err);
+                setPerformanceScore("Error");
+            }
+        };
+
+        fetchEmployeeId();
+    }, [auth]);
+
+
+    // --- STEP 2: Fetch Performance Score ---
+    useEffect(() => {
+        if (!employeeId) return;
+
+        setPerformanceScore("Fetching...");
+        
+        const performanceQuery = query(
+            ref(database, "performanceReviews"),
+            orderByChild("empId"),
+            equalTo(employeeId)
+        );
+
+        const unsubscribe = onValue(performanceQuery, (snapshot) => {
+            if (snapshot.exists()) {
+                let latestScore = "N/A";
+                let latestTimestamp = 0;
+                
+                snapshot.forEach((childSnapshot) => {
+                   const review = childSnapshot.val();
+                   const timestamp = new Date(review.date || 0).getTime();
+                   
+                   if (timestamp > latestTimestamp) {
+                       latestTimestamp = timestamp;
+                       latestScore = review.score || review.rating; 
+                   }
+                });
+
+                setPerformanceScore(latestScore || "N/A");
+            } else {
+                setPerformanceScore("N/A");
+            }
+        }, (error) => {
+            console.error("Firebase Performance Fetch Error:", error);
+            setPerformanceScore("Error");
+        });
+
+        return () => unsubscribe();
+    }, [employeeId]);
+    
+    
+    // --- STEP 3: Fetch Monthly Attendance Data (Including WFH Count) ---
+    useEffect(() => {
+        if (!employeeId) return;
+
+        const attendanceQuery = query(
+            ref(database, "attendanceRecords"),
+            orderByChild("empId"),
+            equalTo(employeeId)
+        );
+
+        const unsubscribe = onValue(attendanceQuery, (snapshot) => {
+            let totalPresent = 0; // Raw count of all non-absent days (Office + WFH)
+            let totalAbsent = 0;
+            let totalLate = 0;
+            let totalWFH = 0; 
+            
+            const today = dayjs();
+            const currentMonthYear = today.format('YYYYMM');
+
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnapshot) => {
+                    const record = childSnapshot.val();
+                    const recordDate = dayjs(record.date);
+                    const recordMonthYear = recordDate.format('YYYYMM');
+
+                    if (recordMonthYear === currentMonthYear) {
+                        const status = (record.attendance || record.status || '').toLowerCase();
+                        
+                        // 1. Count all working days (Present or WFH)
+                        if (status === 'present' || status === 'checkedin' || status === 'wfh') {
+                            totalPresent++; 
+                        } else if (status === 'absent' || status === 'leave') {
+                            totalAbsent++;
+                        } 
+                        
+                        // 2. Count WFH separately
+                        if (status === 'wfh' || record.type === 'WFH'.toLowerCase()) { 
+                            totalWFH++;
+                        }
+                        
+                        // 3. Count Late
+                        if (record.checkIn && record.checkIn > '09:00') {
+                            totalLate++;
+                        }
+                    }
+                });
+            }
+            
+            // Calculate actual Office Days (Total Present - WFH)
+            const totalOfficeDays = totalPresent - totalWFH; 
+            
+            // --- Update Attendance Bar Chart (4 Columns) ---
+            setAttendanceChartData({
+                labels: ['Office Days', 'WFH', 'Absent', 'Late'], 
+                datasets: [
+                    {
+                        label: 'Count',
+                        // Data order must match labels: Office, WFH, Absent, Late
+                        data: [totalOfficeDays, totalWFH, totalAbsent, totalLate], 
+                        backgroundColor: DEFAULT_ATTENDANCE_DATA.datasets[0].backgroundColor,
+                        borderWidth: 1,
+                    },
+                ],
+            });
+
+            // --- Update WFH Doughnut Chart ---
+            let wfhPercent = 0;
+            let officePercent = 0;
+            const totalWorkingDays = totalPresent; 
+
+            if (totalWorkingDays > 0) {
+                wfhPercent = Math.round((totalWFH / totalWorkingDays) * 100);
+                officePercent = 100 - wfhPercent;
+            }
+            
+            setWfhChartData({
+                labels: ['WFH Days', 'Office Days'],
+                datasets: [{ 
+                    data: [wfhPercent, officePercent], 
+                    backgroundColor: DEFAULT_WFH_DATA.datasets[0].backgroundColor, 
+                    hoverBackgroundColor: DEFAULT_WFH_DATA.datasets[0].hoverBackgroundColor
+                }],
+            });
+            
+        });
+
+        return () => unsubscribe();
+    }, [employeeId]); 
 
 
     // -----------------------
@@ -137,7 +234,7 @@ useEffect(() => {
             {/* Header, Employee Name, and CheckIn/Out Button */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, pl: 2, pr: 2 }}>
                 <Typography variant="h5" fontWeight="medium">
-                    Employee - Employee Name
+                    {/* Employee Name Placeholder */}
                 </Typography>
                 <Button 
                     variant="contained" 
@@ -152,16 +249,16 @@ useEffect(() => {
             {/* Main Charts and Metrics Grid */}
             <Grid container spacing={3}>
                 
-                {/* LEFT SIDE (Performance, Task, Calendar) */}
+                {/* LEFT SIDE (Performance, Task, Calendar, WFH) */}
                 <Grid item xs={12} md={6}>
                     <Grid container spacing={3}>
                         
                         {/* 1. Performance Score Card */}
                         <Grid item xs={12} sm={6}>
-                            <Card sx={{ height: 150, bgcolor: '#f5f5f5', borderRadius: 2 }}>
+                            <Card sx={{ width:200, height: 150, bgcolor: '#f5f5f5', borderRadius: 2 }}>
                                 <CardContent>
                                     <Typography variant="body2" color="text.secondary">
-                                        Performance Score
+                                        Latest Performance Score
                                     </Typography>
                                     <Typography variant="h2" color="primary.main" fontWeight="bold">
                                         {performanceScore}
@@ -173,11 +270,11 @@ useEffect(() => {
                         {/* 2. Task Metrics Card (Doughnut Chart) */}
                         <Grid item xs={12} sm={6}>
                             <Card sx={{ height: 150, p: 1, display: 'flex', alignItems: 'center', borderRadius: 2 }}>
-                                <Box sx={{ width: 100, height: 100, ml: 1 }}>
-                                    <Doughnut data={taskData} options={taskOptions} />
+                                <Box sx={{ width: 200, height: 100, ml: 1 }}>
+                                    <Doughnut data={taskChartData} options={WFH_OPTIONS} />
                                 </Box>
                                 <Box sx={{ ml: 2 }}>
-                                    <Typography variant="subtitle1" fontWeight="bold">Task</Typography>
+                                    <Typography variant="subtitle1" fontWeight="bold">Task Status</Typography>
                                     <Divider sx={{ my: 0.5 }} />
                                     <Typography variant="body2" color="text.secondary">Complete Tasks</Typography>
                                     <Typography variant="body2" color="text.secondary">Uncomplete Tasks</Typography>
@@ -185,8 +282,23 @@ useEffect(() => {
                             </Card>
                         </Grid>
                         
-                        {/* 3. Calendar */}
-                        <Grid item xs={12}>
+                        {/* 3. WFH Chart Card (Doughnut Chart) */}
+                        <Grid item xs={12} sm={6}>
+                            <Card sx={{ height: 150, p: 1, display: 'flex', alignItems: 'center', borderRadius: 2 }}>
+                                <Box sx={{ width: 300, height: 100, ml: 1 }}>
+                                    <Doughnut data={wfhChartData} options={WFH_OPTIONS} />
+                                </Box>
+                                <Box sx={{ ml: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight="bold">WFH Ratio</Typography>
+                                    <Divider sx={{ my: 0.5 }} />
+                                    <Typography variant="body2" color="text.secondary">WFH Days</Typography>
+                                    <Typography variant="body2" color="text.secondary">Office Days</Typography>
+                                </Box>
+                            </Card>
+                        </Grid>
+
+                        {/* 4. Calendar */}
+                        {/* <Grid item xs={12} sm={6}>
                             <Card sx={{ p: 1, maxWidth: 400, mx: 'auto', borderRadius: 2 }}>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                                     <DateCalendar 
@@ -198,25 +310,26 @@ useEffect(() => {
                                     />
                                 </LocalizationProvider>
                             </Card>
-                        </Grid>
+                        </Grid> */}
                     </Grid>
                 </Grid>
 
-                {/* RIGHT SIDE: Attendance Bar Chart */}
+                {/* RIGHT SIDE: Attendance Bar Chart (Now includes WFH column) */}
                 <Grid item xs={12} md={6}>
                     <Card sx={{ height: '100%', minHeight: 490, p: 2, borderRadius: 2, display: 'flex', flexDirection: 'column' }}> 
                         <Typography variant="subtitle1" fontWeight="bold" sx={{ ml: 1, mb: 1 }}>
-                            Attendance
+                            Monthly Attendance
                         </Typography>
                         <Box sx={{ flexGrow: 1, height: 400 }}>
-                            <Bar data={attendanceData} options={attendanceOptions} />
+                            {/* Bar chart uses the updated state with 4 data points */}
+                            <Bar data={attendanceChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false }, title: { display: false } } }} />
                         </Box>
                         <Button 
                             variant="outlined" 
                             size="small"
                             sx={{ mt: 2 }}
                         >
-                            OK (View Details Placeholder)
+                            View Details
                         </Button>
                     </Card>
                 </Grid>
@@ -231,14 +344,11 @@ useEffect(() => {
 // Main Export Component
 // ----------------------------------------------------
 function EmployeeDashboard() {
-  
-  return (
-    <>
-        <EmployeeLayout>
-            <EmployeeDashboardContent />
-        </EmployeeLayout>
-    </>
-  )
+  return (
+    <EmployeeLayout>
+        <EmployeeDashboardContent />
+    </EmployeeLayout>
+  )
 }
 
 export default EmployeeDashboard;
