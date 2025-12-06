@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import EmployeeLayout from '../../../Layout/Employee_Layout/EmployeeL';
-import './empPerform.css'; // Assuming this CSS file exists
+import './empPerform.css';
 import { FaStar } from 'react-icons/fa';
 import {
   PieChart,
@@ -19,42 +19,39 @@ import { getAuth } from 'firebase/auth';
 import { getDatabase, ref, query, orderByChild, equalTo, get } from 'firebase/database';
 import app from '../../../Service/FirebaseConfig';
 
-// --- Chart Constants and Default Data ---
 const PIE_COLORS = ['#b89d2e', '#bb7c2d'];
 const BAR_COLORS = ['#C58940', '#ebd174ff', '#B09226'];
 
-const DEFAULT_RATING = 0;
+const DEFAULT_RATING = 0.0;
 const DEFAULT_COMMENT = "No recent performance review.";
 const DEFAULT_PIE_DATA = [
-  { name: 'Complete Tasks', value: 60 }, // Using placeholder data until you integrate Task/Attendance system
-  { name: 'Uncomplete Tasks', value: 40 },
+  { name: 'Complete Tasks', value: 0 },
+  { name: 'Incomplete Tasks', value: 0 },
 ];
 const DEFAULT_BAR_DATA = [
-  { name: 'Present', count: 22 },
-  { name: 'Absent', count: 14 },
-  { name: 'Leave', count: 7 },
+  { name: 'Present', count: 0 },
+  { name: 'Leave', count: 0 },
 ];
 
 function EmployeePerformance() {
   const auth = getAuth(app);
   const db = getDatabase(app);
 
-  const [employeeId, setEmployeeId] = useState(null); // The short '004' ID
+  const [employeeId, setEmployeeId] = useState(null);
   const [performanceData, setPerformanceData] = useState({
     rating: DEFAULT_RATING,
     comment: DEFAULT_COMMENT,
-    leaveCount: 8,
-    attendanceCount: 25,
+    leaveCount: 0,
+    attendanceCount: 0,
     pieChartData: DEFAULT_PIE_DATA,
     barChartData: DEFAULT_BAR_DATA,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Function to render stars based on rating (0 to 5)
   const renderStars = useCallback((rating) => {
     const stars = [];
-    const normalizedRating = Math.round(rating); // Use rounded score for star display
+    const normalizedRating = Math.max(0, Math.min(5, Math.round(rating)));
     for (let i = 1; i <= 5; i++) {
       stars.push(
         <FaStar
@@ -66,201 +63,262 @@ function EmployeePerformance() {
     return stars;
   }, []);
 
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        setError('No logged-in user found.');
+        setLoading(false);
+        return;
+      }
 
-  /**
-   * STEP 2: Fetch the latest performance review using the retrieved employeeId.
-   */
+      const EMP_PROFILE_PATH = 'createEmployee/newEmployee';
+
+      try {
+        const directRef = ref(db, `${EMP_PROFILE_PATH}/${user.uid}`);
+        const directSnap = await get(directRef);
+        if (directSnap.exists() && directSnap.val().memberID) {
+          setEmployeeId(directSnap.val().memberID);
+          return;
+        }
+
+        const employeesRef = ref(db, EMP_PROFILE_PATH);
+        const q = query(employeesRef, orderByChild('firebaseId'), equalTo(user.uid));
+        const empSnap = await get(q);
+
+        let foundMemberId = null;
+        empSnap.forEach((child) => {
+          const val = child.val();
+          if (val.memberID) foundMemberId = val.memberID;
+        });
+
+        if (foundMemberId) {
+          setEmployeeId(foundMemberId);
+          return;
+        }
+
+        setError('Employee Profile not found. Cannot fetch performance.');
+      } catch (err) {
+        console.error('Error fetching member ID:', err);
+        setError('Failed to load Employee Profile');
+      }
+
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [auth, db]);
+
   useEffect(() => {
     if (!employeeId) return;
 
-    const fetchReviewData = async () => {
+    const fetchAllPerformanceData = async () => {
       setLoading(true);
-      setError(null);
+      const newData = {
+        rating: DEFAULT_RATING,
+        comment: DEFAULT_COMMENT,
+        leaveCount: 0,
+        attendanceCount: 0,
+        pieChartData: DEFAULT_PIE_DATA,
+        barChartData: DEFAULT_BAR_DATA,
+      };
 
+      let hasError = false;
+
+      // PERFORMANCE
       try {
         const performanceRef = ref(db, 'performanceReviews');
-        
-        // Query: Find all reviews where 'empId' matches the short employeeId (e.g., '004')
-        const employeeQuery = query(
-          performanceRef,
-          orderByChild('empId'),
-          equalTo(employeeId)
-        );
+        const perfQuery = query(performanceRef, orderByChild('empId'), equalTo(employeeId));
+        const snap = await get(perfQuery);
 
-        const snapshot = await get(employeeQuery);
         let latestReview = null;
-
-        if (snapshot.exists()) {
-          let latestDate = 0;
-          
-          // Iterate and find the most recent review by date
-          snapshot.forEach((childSnapshot) => {
-            const review = childSnapshot.val();
-            // Assuming date is in 'YYYY-MM-DD' format, which Date can parse
-            const reviewTimestamp = new Date(review.date).getTime(); 
-
-            if (reviewTimestamp > latestDate) {
-              latestDate = reviewTimestamp;
+        let latestDate = 0;
+        if (snap.exists()) {
+          snap.forEach((child) => {
+            const review = child.val();
+            const timestamp = review.date ? new Date(review.date).getTime() : 0;
+            if (timestamp > latestDate) {
+              latestDate = timestamp;
               latestReview = review;
             }
           });
         }
 
         if (latestReview) {
-          setPerformanceData(prevData => ({
-            ...prevData,
-            // Rating might be stored as a string like "10.5" or a number like 4
-            rating: parseFloat(latestReview.rating) || parseFloat(latestReview.score) || DEFAULT_RATING,
-            comment: latestReview.comments || DEFAULT_COMMENT,
-            // NOTE: Attendance/Task data is currently using static defaults.
-            // If this data is stored in Firebase, you'd fetch it here.
-          }));
-        } else {
-          setError("No performance reviews found for this employee.");
+          newData.rating = parseFloat(latestReview.rating ?? latestReview.score) || 0;
+          newData.comment = latestReview.comments ?? latestReview.comment ?? DEFAULT_COMMENT;
         }
       } catch (err) {
-        console.error("Error fetching review data:", err);
-        setError("Failed to fetch performance reviews.");
-      } finally {
-        setLoading(false);
+        console.error('Error fetching review:', err);
+        hasError = true;
       }
+
+      // ATTENDANCE
+      try {
+        const attendanceRef = ref(db, 'attendanceRecords');
+        const attQuery = query(attendanceRef, orderByChild('empId'), equalTo(employeeId));
+        const attSnap = await get(attQuery);
+
+        let totalPresent = 0, totalLeave = 0, totalAbsent = 0;
+        let latestYear = null, latestMonth = null;
+
+        attSnap.forEach((child) => {
+          const dateStr = child.val().date || "";
+          if (!dateStr.includes("-")) return;
+          const y = dateStr.substring(0, 4);
+          const m = dateStr.substring(5, 7);
+          if (!latestYear || (y + m) > (latestYear + latestMonth)) {
+            latestYear = y;
+            latestMonth = m;
+          }
+        });
+
+        attSnap.forEach((child) => {
+          const record = child.val();
+          const dateStr = record.date || "";
+          if (!dateStr.includes("-")) return;
+          const recordYear = dateStr.substring(0, 4);
+          const recordMonth = dateStr.substring(5, 7);
+          if (recordYear === latestYear && recordMonth === latestMonth) {
+            const status = (record.attendance || "").toLowerCase();
+            if (status === "present") totalPresent++;
+            else if (status === "leave") totalLeave++;
+            else totalAbsent++;
+          }
+        });
+
+        newData.attendanceCount = totalPresent;
+        newData.leaveCount = totalLeave;
+
+        newData.barChartData = [
+          { name: 'Present', count: totalPresent },
+          { name: 'Leave', count: totalLeave },
+        ];
+      } catch (err) {
+        console.error('Error fetching attendance:', err);
+        hasError = true;
+      }
+
+      // TASKS
+      try {
+        const tasksRef = ref(db, 'tasks');
+        const tQuery = query(tasksRef, orderByChild('empId'), equalTo(employeeId));
+        const taskSnap = await get(tQuery);
+
+        let completedTasks = 0, totalTasks = 0;
+        if (taskSnap.exists()) {
+          taskSnap.forEach((child) => {
+            const task = child.val();
+            const status = (task.status || "").toLowerCase();
+            totalTasks++;
+            if (status === 'complete' || status === 'completed') completedTasks++;
+          });
+        }
+
+        const completedPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+        newData.pieChartData = [
+          { name: 'Complete Tasks', value: completedPercent },
+          { name: 'Incomplete Tasks', value: 100 - completedPercent },
+        ];
+      } catch (err) {
+        console.error('Error fetching tasks:', err);
+        hasError = true;
+      }
+
+      setPerformanceData(newData);
+      setError(hasError ? 'Some data failed to load!' : null);
+      setLoading(false);
     };
 
-    fetchReviewData();
-  }, [db, employeeId]); // Dependency on employeeId ensures this runs only after the ID is set.
-
-
-  /**
-   * STEP 1: Fetch the employee's short ID ('004') using their long Firebase UID.
-   */
-  useEffect(() => {
-    const fetchEmployeeId = auth.onAuthStateChanged(async (user) => {
-      if (!user) {
-        setLoading(false);
-        setError("No logged-in user found.");
-        return;
-      }
-      
-      try {
-        // Query the employee profile to get the memberID (which is the empId '004')
-        const employeeRef = ref(db, `createEmployee/newEmployee/${user.uid}`);
-        const snapshot = await get(employeeRef);
-
-        if (snapshot.exists() && snapshot.val().memberID) {
-          setEmployeeId(snapshot.val().memberID); // Set the short ID (e.g., '004')
-        } else {
-          setError("Employee Profile data (memberID) not found.");
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("Error fetching member ID:", err);
-        setError("Failed to retrieve employee profile ID.");
-        setLoading(false);
-      }
-    });
-
-    return () => fetchEmployeeId();
-  }, [auth, db]); // Dependencies: auth and db instances
-
+    fetchAllPerformanceData();
+  }, [employeeId, db]);
 
   if (loading) {
-    return (
-      <EmployeeLayout>
-        <p>Loading employee performance data...</p>
-      </EmployeeLayout>
-    );
+    return <EmployeeLayout><h3>Loading employee performance...</h3></EmployeeLayout>;
   }
 
-  if (error) {
-    return (
-      <EmployeeLayout>
-        <p style={{ color: 'red', fontWeight: 'bold', padding: '20px' }}>
-          Error: {error}
-        </p>
-        <p>Displaying static data for visualization.</p>
-        {/* Continue to render the component with default data for visualization */}
-      </EmployeeLayout>
-    );
-  }
-
-  // Destructure the final data for cleaner rendering
   const { rating, comment, leaveCount, attendanceCount, pieChartData, barChartData } = performanceData;
 
   return (
     <EmployeeLayout>
       <div className="performance-container">
         <h2>Employee Performance Overview 📊</h2>
-        
+
         <div className="performance-row">
-          {/* Rating Box */}
           <div className="employee-rating-box">
             <div className="rating-header">
-              <span>Employee Ratings</span>
+              <span>Employee Rating</span>
               <span className="rating-score">{rating.toFixed(1)}</span>
             </div>
 
-            <div className="rating-stars">
-              {renderStars(rating)}
-            </div>
-
+            <div className="rating-stars">{renderStars(rating)}</div>
             <div className="rating-comment-label">Latest HR Comment</div>
-            <div className="rating-comment-text">
-              {comment}
-            </div>
+            <div className="rating-comment-text">{comment}</div>
           </div>
 
-          {/* Leave and Attendance Stats */}
           <div className="employee-stats-container">
             <div className="stat-boxLeave">
-              <div className="stat-labelLeave">Leave Count per Month</div>
+              <div className="stat-labelLeave">Leave Days</div>
               <div className="stat-valueLeave">{leaveCount}</div>
             </div>
+
             <div className="stat-boxAttendance">
-              <div className="stat-labelAttendance">Attendance per Month</div>
+              <div className="stat-labelAttendance">Present Days</div>
               <div className="stat-valueAttendance">{attendanceCount}</div>
             </div>
           </div>
         </div>
 
-        {/* --- Charts Section --- */}
         <div className="performance-graphs-row">
-          {/* Left Box: Pie Chart (Task Completion) */}
           <div className="graph-box">
             <h3>Task Completion</h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
                   data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={5}
                   dataKey="value"
+                  outerRadius={80}
+                  labelLine={true}
+                  label={({ cx, cy, midAngle, outerRadius, percent, index }) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = outerRadius + 20;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#000"
+                        textAnchor={x > cx ? 'start' : 'end'}
+                        dominantBaseline="central"
+                      >
+                        {`${pieChartData[index].name}: ${(percent * 100).toFixed(0)}%`}
+                      </text>
+                    );
+                  }}
                 >
                   {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [`${value}`, 'Value']} />
-                <Legend />
+                <Legend verticalAlign="bottom" />
+                <Tooltip formatter={(value) => `${value}%`} />
               </PieChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Right Box: Bar Chart (Attendance Overview) */}
           <div className="graph-box">
             <h3>Attendance Overview</h3>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={barChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={barChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
-                <YAxis />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" name="Days">
+                <Bar dataKey="count">
                   {barChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
+                    <Cell key={index} fill={BAR_COLORS[index % BAR_COLORS.length]} />
                   ))}
                 </Bar>
               </BarChart>
