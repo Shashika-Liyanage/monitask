@@ -58,9 +58,17 @@ const EmployeeDashboardContent = () => {
     // --- States for Live Data ---
     const [employeeId, setEmployeeId] = useState(null);
     const [performanceScore, setPerformanceScore] = useState("Loading..."); 
+    
+    // Chart Data
     const [taskChartData, setTaskChartData] = useState(DEFAULT_TASK_DATA);
     const [attendanceChartData, setAttendanceChartData] = useState(DEFAULT_ATTENDANCE_DATA);
     const [wfhChartData, setWfhChartData] = useState(DEFAULT_WFH_DATA);
+    
+    // *** NEW RAW COUNT STATES FOR TYPOGRAPHY DISPLAY ***
+    const [completeTasks, setCompleteTasks] = useState("N/A");
+    const [uncompleteTasks, setUncompleteTasks] = useState("N/A");
+    const [attendanceRawCounts, setAttendanceRawCounts] = useState({ office: 'N/A', wfh: 'N/A' });
+
     const [isCheckedIn, setIsCheckedIn] = useState(false);
     
     const handleCheckInToggle = () => {
@@ -173,11 +181,11 @@ const EmployeeDashboardContent = () => {
                         } 
                         
                         // 2. Count WFH separately
-                        if (status === 'wfh' || record.type === 'WFH'.toLowerCase()) { 
+                        if (status === 'wfh' || (record.type && record.type.toLowerCase() === 'wfh')) { 
                             totalWFH++;
                         }
                         
-                        // 3. Count Late
+                        // 3. Count Late (Assuming checkIn time is stored as string 'HH:MM')
                         if (record.checkIn && record.checkIn > '09:00') {
                             totalLate++;
                         }
@@ -188,6 +196,9 @@ const EmployeeDashboardContent = () => {
             // Calculate actual Office Days (Total Present - WFH)
             const totalOfficeDays = totalPresent - totalWFH; 
             
+            // *** UPDATE RAW COUNT STATE ***
+            setAttendanceRawCounts({ office: totalOfficeDays, wfh: totalWFH });
+
             // --- Update Attendance Bar Chart (4 Columns) ---
             setAttendanceChartData({
                 labels: ['Office Days', 'WFH', 'Absent', 'Late'], 
@@ -202,7 +213,7 @@ const EmployeeDashboardContent = () => {
                 ],
             });
 
-            // --- Update WFH Doughnut Chart ---
+            // --- Update WFH Doughnut Chart (Percentages) ---
             let wfhPercent = 0;
             let officePercent = 0;
             const totalWorkingDays = totalPresent; 
@@ -225,6 +236,34 @@ const EmployeeDashboardContent = () => {
 
         return () => unsubscribe();
     }, [employeeId]); 
+    
+    // --- STEP 4 (NEW): Fetch Task Data (Simulated/Placeholder) ---
+    // You must replace this block with actual Firebase logic to query your 'tasks' collection
+    useEffect(() => {
+        if (!employeeId) return;
+        
+        // --- START SIMULATION ---
+        // Replace these hardcoded values with your actual Firebase query logic
+        const tempCompleted = 18; 
+        const tempUncompleted = 5; 
+        // --- END SIMULATION ---
+        
+        setCompleteTasks(tempCompleted);
+        setUncompleteTasks(tempUncompleted);
+        
+        const totalTasks = tempCompleted + tempUncompleted;
+        const completePercent = totalTasks > 0 ? Math.round((tempCompleted / totalTasks) * 100) : 0;
+        const uncompletePercent = 100 - completePercent;
+
+        setTaskChartData({
+            labels: ['Complete Tasks', 'Uncomplete Tasks'],
+            datasets: [{ 
+                data: [completePercent, uncompletePercent], 
+                backgroundColor: DEFAULT_TASK_DATA.datasets[0].backgroundColor, 
+                hoverBackgroundColor: DEFAULT_TASK_DATA.datasets[0].hoverBackgroundColor
+            }],
+        });
+    }, [employeeId]);
 
 
     // -----------------------
@@ -236,14 +275,14 @@ const EmployeeDashboardContent = () => {
                 <Typography variant="h5" fontWeight="medium">
                     {/* Employee Name Placeholder */}
                 </Typography>
-                <Button 
+                {/* <Button 
                     variant="contained" 
                     color={isCheckedIn ? 'error' : 'success'}
                     onClick={handleCheckInToggle}
                     sx={{ borderRadius: '15px' }} 
                 >
                     {isCheckedIn ? 'CheckOut' : 'CheckIn'}
-                </Button>
+                </Button> */}
             </Box>
             
             {/* Main Charts and Metrics Grid */}
@@ -276,8 +315,9 @@ const EmployeeDashboardContent = () => {
                                 <Box sx={{ ml: 2 }}>
                                     <Typography variant="subtitle1" fontWeight="bold">Task Status</Typography>
                                     <Divider sx={{ my: 0.5 }} />
-                                    <Typography variant="body2" color="text.secondary">Complete Tasks</Typography>
-                                    <Typography variant="body2" color="text.secondary">Uncomplete Tasks</Typography>
+                                    {/* *** Displaying Task Counts *** */}
+                                    <Typography  variant="body2" color="text.secondary">Complete Tasks:{completeTasks}</Typography>
+                                    <Typography variant="body2" color="text.secondary">Uncomplete Tasks:{uncompleteTasks}</Typography>
                                 </Box>
                             </Card>
                         </Grid>
@@ -291,46 +331,41 @@ const EmployeeDashboardContent = () => {
                                 <Box sx={{ ml: 2 }}>
                                     <Typography variant="subtitle1" fontWeight="bold">WFH Ratio</Typography>
                                     <Divider sx={{ my: 0.5 }} />
-                                    <Typography variant="body2" color="text.secondary">WFH Days</Typography>
-                                    <Typography variant="body2" color="text.secondary">Office Days</Typography>
+                                    {/* *** Displaying WFH/Office Counts *** */}
+                                    <Typography variant="body2" color="text.secondary">WFH Days: {attendanceRawCounts.wfh}</Typography>
+                                    <Typography variant="body2" color="text.secondary">Office Days: {attendanceRawCounts.office}</Typography>
                                 </Box>
                             </Card>
                         </Grid>
 
-                        {/* 4. Calendar */}
-                        {/* <Grid item xs={12} sm={6}>
+                        {/* 4. Calendar Placeholder - Currently commented out */}
+                         {/* <Grid item xs={12} sm={6}>
                             <Card sx={{ p: 1, maxWidth: 400, mx: 'auto', borderRadius: 2 }}>
                                 <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                    <DateCalendar 
-                                        readOnly 
-                                        sx={{ 
-                                            maxWidth: '100%', 
-                                            mx: 'auto'
-                                        }}
-                                    />
+                                     <DateCalendar 
+                                         readOnly 
+                                         sx={{ 
+                                             maxWidth: '100%', 
+                                             mx: 'auto'
+                                         }}
+                                     />
                                 </LocalizationProvider>
                             </Card>
-                        </Grid> */}
+                         </Grid> */}
+                        
                     </Grid>
                 </Grid>
 
-                {/* RIGHT SIDE: Attendance Bar Chart (Now includes WFH column) */}
+                {/* RIGHT SIDE: Attendance Bar Chart */}
                 <Grid item xs={12} md={6}>
                     <Card sx={{  height: '100%', minHeight: 490, p: 2, borderRadius: 2, display: 'flex', flexDirection: 'column' }}> 
                         <Typography variant="subtitle1" fontWeight="bold" sx={{ ml: 1, mb: 1 }}>
                             Monthly Attendance
                         </Typography>
                         <Box sx={{ flexGrow: 1,width:500, height: 400 }}>
-                            {/* Bar chart uses the updated state with 4 data points */}
+                            {/* Bar chart uses the updated state with 4 data points (Office, WFH, Absent, Late) */}
                             <Bar data={attendanceChartData} options={{ responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false }, title: { display: false } } }} />
                         </Box>
-                        {/* <Button 
-                            variant="outlined" 
-                            size="small"
-                            sx={{ mt: 2 }}
-                        >
-                            View Details
-                        </Button> */}
                     </Card>
                 </Grid>
 
@@ -344,11 +379,11 @@ const EmployeeDashboardContent = () => {
 // Main Export Component
 // ----------------------------------------------------
 function EmployeeDashboard() {
-  return (
-    <EmployeeLayout>
-        <EmployeeDashboardContent />
-    </EmployeeLayout>
-  )
+    return (
+        <EmployeeLayout>
+            <EmployeeDashboardContent />
+        </EmployeeLayout>
+    )
 }
 
 export default EmployeeDashboard;
