@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Person4RoundedIcon from '@mui/icons-material/Person4Rounded';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import ChatIcon from '@mui/icons-material/Chat';
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -46,7 +47,17 @@ function EmployeeHeaderView({ onToggleSidebar }) {
     // --- NEW STATE: Time and Date ---
     const [currentTime, setCurrentTime] = useState(formatDateTime());
     // ---------------------------------
+const [isModalOpen, setIsModalOpen] = useState(false); 
 
+  // Function to open the modal
+  const openChatModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // Function to close the modal (used inside ChatModal)
+  const closeChatModal = () => {
+    setIsModalOpen(false);
+  };
     // Function to toggle the notification popup
     const toggleNotificationPopup = useCallback(() => {
         setNotificationState(prev => ({
@@ -174,10 +185,17 @@ function EmployeeHeaderView({ onToggleSidebar }) {
                 {/* Logged-in employee name with profile icon */}
                 {employeeName && (
                     <div className="employee-info">
-                        <Person4RoundedIcon className="header-icon" />
+                       
+                            <ChatIcon onClick={openChatModal} className="header-icon" />
+                        <span className="employee-name"></span>
+                             <div className="employee-info">
+                       
+                            <Person4RoundedIcon className="header-icon" />
                         <span className="employee-name">{employeeName}</span>
                     </div>
+                    </div>
                 )}
+                
 
                 {/* --- Notification Bell (with badge and click handler) --- */}
                 <div className="notification-wrapper">
