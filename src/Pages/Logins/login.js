@@ -49,7 +49,7 @@ function Login() {
 
         {/* User Type Selection */}
         <div className="user-type">
-          <label>
+          {/* <label>
             <input
               type="radio"
               name="userType"
@@ -58,7 +58,7 @@ function Login() {
               onChange={() => setUserType("admin")}
             />
             Admin
-          </label>
+          </label> */}
           <label>
             <input
               type="radio"

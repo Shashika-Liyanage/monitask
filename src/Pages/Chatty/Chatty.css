@@ -1,0 +1,473 @@
+/* Container for the chat modal */
+.chat-modal-container {
+    /* Fixed position keeps it in the same place even when scrolling */
+    position: fixed;
+    bottom: 0;
+    right: 20px; /* Adjust as needed */
+    
+    /* Size and appearance */
+    width: 300px; /* Standard chat width */
+    height: 400px; /* Standard chat height */
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 6px 6px 0 0; /* Rounded corners on top only */
+    z-index: 1000; /* Ensure it stays on top of other content */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header styling */
+.chat-modal-header {
+    background-color: #007bff; /* Facebook blue is a common choice */
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: default;
+}
+
+.chat-title {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.chat-close-icon {
+    /* Style for the MUI CloseIcon */
+    cursor: pointer;
+    font-size: 20px !important;
+    transition: background-color 0.2s;
+    padding: 2px;
+    border-radius: 50%;
+}
+
+.chat-close-icon:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Body (Content) styling */
+.chat-modal-body {
+    flex-grow: 1; /* Takes up all remaining space */
+    padding: 10px;
+    overflow-y: auto; /* Allows scrolling if content is too long */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Pushes the input to the bottom */
+}
+
+/* Chatty.css */
+
+/* Main container positioning and size */
+.chat-modal-container {
+    position: fixed; /* Keep it fixed on the screen */
+    bottom: 0; /* Align to the bottom edge */
+    right: 20px; /* Space from the right edge */
+    width: 300px; /* Standard chat width */
+    height: 400px; /* Standard chat height */
+    
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px 8px 0 0; /* Rounded top corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000; /* Ensure it stays above other content */
+}
+
+/* Header Styling */
+.chat-modal-header {
+    background-color: #4092ff; /* Facebook-like blue */
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+}
+
+.chat-title {
+    font-weight: bold;
+}
+
+.chat-close-icon {
+    /* Style for the MUI CloseIcon */
+    cursor: pointer;
+    font-size: 20px !important;
+}
+
+/* Message Body/Content Area */
+.chat-modal-body {
+    flex-grow: 1; /* Takes up all available space */
+    overflow-y: auto; /* Allows scrolling for messages */
+    padding: 10px;
+    background-color: #f7f7f7;
+    display: flex;
+    flex-direction: column-reverse; /* Display new messages at the bottom */
+}
+
+/* Individual Message Style */
+.chat-message {
+    padding: 5px 8px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    background-color: #e0e0e0;
+    max-width: 85%;
+    word-wrap: break-word;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.chat-message strong {
+    color: #333;
+}
+
+.timestamp {
+    display: block;
+    font-size: 10px;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* Input Form Styling */
+.chat-input-form {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.message-input {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.send-button {
+    background-color: #4092ff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.send-button:hover {
+    background-color: #2e6dbf;
+}
+
+/* src/Chatty.css */
+
+/* Main container positioning and size */
+.chat-modal-container {
+    position: fixed; 
+    bottom: 0; 
+    right: 20px; 
+    width: 300px; 
+    height: 400px; 
+    
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+/* Header Styling */
+.chat-modal-header {
+    background-color: #4092ff;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px 8px 0 0;
+}
+
+.chat-title {
+    font-weight: bold;
+}
+
+.chat-close-icon {
+    cursor: pointer;
+    font-size: 20px !important;
+}
+
+/* Message Display Area */
+.chat-modal-body {
+    flex-grow: 1; 
+    overflow-y: auto; 
+    padding: 10px;
+    background-color: #f7f7f7;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure message list items are aligned correctly */
+.message-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Individual Message Style */
+.chat-message {
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    max-width: 85%;
+    word-wrap: break-word;
+    font-size: 14px;
+    line-height: 1.3;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Messages from others */
+.chat-message.other-message {
+    background-color: #e0e0e0;
+    align-self: flex-start; /* Aligned left */
+    border-radius: 12px 12px 12px 0;
+}
+
+.chat-message.other-message strong {
+    color: #333;
+}
+
+/* Messages from the current user */
+.chat-message.my-message {
+    background-color: #0084ff;
+    color: white; 
+    align-self: flex-end; /* Aligned right */
+    border-radius: 12px 12px 0 12px; 
+}
+
+.chat-message.my-message strong {
+    color: white;
+}
+
+.timestamp {
+    font-size: 10px;
+    margin-top: 2px;
+    opacity: 0.7;
+    align-self: flex-end;
+}
+
+/* Input Form Styling */
+.chat-input-form {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.message-input {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.send-button {
+    background-color: #4092ff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover:not(:disabled) {
+    background-color: #2e6dbf;
+}
+
+.send-button:disabled {
+    background-color: #a0a0a0;
+    cursor: not-allowed;
+}
+/* Container for the entire chat modal */
+.chat-modal-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+/* Header Styling */
+.chat-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border-bottom: 1px solid #0056b3;
+}
+
+.chat-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.chat-close-icon {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.chat-close-icon:hover {
+    opacity: 0.8;
+}
+
+/* Body (Message List) Styling */
+.chat-modal-body {
+    flex-grow: 1; /* Takes up all available space */
+    overflow-y: auto; /* Allows scrolling messages */
+    padding: 10px;
+    background-color: #f8f9fa;
+}
+
+.message-list {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Individual Message Styling */
+.chat-message {
+    max-width: 80%;
+    margin: 5px 0;
+    padding: 8px 12px;
+    border-radius: 15px;
+    line-height: 1.4;
+    font-size: 0.95rem;
+    word-wrap: break-word; /* Ensure long words wrap */
+    display: flex;
+    flex-direction: column; /* Stack user, text, and timestamp */
+    align-items: flex-start;
+    position: relative;
+}
+
+.user-name {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 2px;
+}
+
+.timestamp {
+    font-size: 0.7rem;
+    color: rgba(0, 0, 0, 0.4);
+    align-self: flex-end; /* Align time to the right edge of the bubble */
+    margin-top: 3px;
+}
+
+/* Styling for messages sent by the current user */
+.my-message {
+    align-self: flex-end;
+    background-color: #dcf8c6; /* Light green/blue for sender */
+    color: #000;
+    border-bottom-right-radius: 3px; /* Sharp corner on bottom right */
+}
+
+/* Styling for messages sent by others */
+.other-message {
+    align-self: flex-start;
+    background-color: #ffffff; /* White/light grey for receiver */
+    color: #000;
+    border: 1px solid #e9ecef;
+    border-bottom-left-radius: 3px; /* Sharp corner on bottom left */
+}
+
+.other-message .user-name {
+    color: #007bff; /* Highlight other users' names */
+}
+
+/* Input Form Styling */
+.chat-input-form {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ccc;
+    background-color: #ffffff;
+}
+
+.message-input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 20px;
+    margin-right: 10px;
+    font-size: 1rem;
+}
+
+.message-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.send-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.send-button:disabled {
+    background-color: #a0c3e8;
+    cursor: not-allowed;
+}
+/* Chatty.css (Example Styling) */
+
+.chat-message {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 18px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+/* Style for the current user's messages */
+.chat-message.sent {
+    background-color: #007aff; /* Blue for sender */
+    color: white;
+    margin-left: auto; /* Align to the right */
+    text-align: right;
+}
+
+/* Style for other users' messages */
+.chat-message.received {
+    background-color: #e5e5ea; /* Gray for receiver */
+    color: #000;
+    margin-right: auto; /* Align to the left */
+    text-align: left;
+}
+
+.timestamp {
+    display: block;
+    font-size: 0.7em;
+    opacity: 0.7;
+    margin-top: 3px;
+}

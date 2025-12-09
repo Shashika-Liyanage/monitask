@@ -461,8 +461,10 @@ function AdminAttendanceReq() {
                                 <Person3RoundedIcon className="attendance-req-avatar-icon" />
                             </div>
                             <div className="attendance-req-card-content">
-                                <strong>{emp.empId}</strong>
-                                <p>{emp.attendance}</p>
+                                <strong>EMP NO:          {emp.empId}</strong>
+                                <p>Status:        {emp.attendance}</p>
+                                <p>Name :         {emp.employee}</p>
+                                <p>Check in Time: {emp.checkIn}</p>
                             </div>
                             <div className="attendance-req-status-dot online"></div>
                         </div>
